@@ -26,14 +26,17 @@ function generateGame() {
     let mazeHeight = 9;
     let cellSize = 20;
     let maze = generatePrimMaze(mazeWidth, mazeHeight);
+    let wallOffsetX = 500/2/scale - (1.5*cellSize);
+    let wallOffsetY = 500/2/scale - (1.5*cellSize);
     drawMaze();
 
     // Place player on game canvas
     let playerSize = Math.floor(cellSize/2);
     let playerSpeed = cellSize; // pixels per second
     // -- center player in the top-left corner of the maze
-    let playerX = cellSize + Math.floor(playerSize/2);
-    let playerY = cellSize + Math.floor(playerSize/2);
+    let playerX = 500/2/scale - Math.floor(playerSize/2);
+    let playerY = 500/2/scale - Math.floor(playerSize/2);
+    let playerCell = [1, 1]; // Coordinate of the player
     ctx.fillStyle = "navy";
     ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
@@ -47,16 +50,16 @@ function generateGame() {
         // Check direction of movement based on the key pressed
         switch (e.key) {
             case 'w':
-                movePlayer(0, -playerSpeed);
-                break;
-            case 'a':
-                movePlayer(-playerSpeed, 0);
-                break;
-            case 's':
                 movePlayer(0, playerSpeed);
                 break;
-            case 'd':
+            case 'a':
                 movePlayer(playerSpeed, 0);
+                break;
+            case 's':
+                movePlayer(0, -playerSpeed);
+                break;
+            case 'd':
+                movePlayer(-playerSpeed, 0);
                 break;
 
         }
@@ -74,7 +77,7 @@ function generateGame() {
                     ctx.fillStyle = "beige";
                     // ctx.strokeStyle = "rgb(0 255 0 / 50%)";
                 }
-                ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+                ctx.fillRect(x*cellSize+wallOffsetX, y*cellSize+wallOffsetY, cellSize, cellSize);
                 // ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
             }
         }
@@ -86,40 +89,42 @@ function generateGame() {
         // Clear the canvas
         ctx.clearRect(0, 0, 500, 500);
 
+        // Check for collisions before drawing
+        if (changeX < 0) { // moving right
+            if (playerCell[0] < mazeWidth-1) { // check cell to right
+                if (maze[playerCell[0]+1][playerCell[1]] === 0) {
+                    wallOffsetX += changeX;
+                    playerCell[0] += 1;
+                }
+            }
+        }
+        if (changeX > 0) { // moving left
+            if (playerCell[0] > 0) { // check cell to right
+                if (maze[playerCell[0]-1][playerCell[1]] === 0) {
+                    wallOffsetX += changeX;
+                    playerCell[0] -= 1;
+                }
+            }
+        }
+        if (changeY < 0) { // moving down
+            if (playerCell[1] < mazeHeight-1) { // check cell below
+                if (maze[playerCell[0]][playerCell[1]+1] === 0) {
+                    wallOffsetY += changeY;
+                    playerCell[1] += 1;
+                }
+            }
+        }
+        if (changeY > 0) { // moving up
+            if (playerCell[1] > 0) { // check cell above
+                if (maze[playerCell[0]][playerCell[1]-1] === 0) {
+                    wallOffsetY += changeY;
+                    playerCell[1] -= 1;
+                }
+            }
+        }
+
         // Redraw the maze
         drawMaze();
-
-        // Check for collisions before drawing
-        let currentCell = [(playerX - Math.floor(playerSize/2)) / cellSize, (playerY - Math.floor(playerSize/2)) / cellSize];
-        // console.log(currentCell);
-        if (changeX > 0) { // moving right
-            if (Math.floor(currentCell[0]) < mazeWidth-1) { // check cell to right
-                if (maze[currentCell[0]+1][currentCell[1]] === 0) {
-                    playerX += changeX;
-                }
-            }
-        }
-        if (changeX < 0) { // moving left
-            if (Math.floor(currentCell[0]) > 0) { // check cell to right
-                if (maze[currentCell[0]-1][currentCell[1]] === 0) {
-                    playerX += changeX;
-                }
-            }
-        }
-        if (changeY > 0) { // moving down
-            if (Math.floor(currentCell[1]) < mazeHeight-1) { // check cell below
-                if (maze[currentCell[0]][currentCell[1]+1] === 0) {
-                    playerY += changeY;
-                }
-            }
-        }
-        if (changeY < 0) { // moving up
-            if (Math.floor(currentCell[1]) > 0) { // check cell above
-                if (maze[currentCell[0]][currentCell[1]-1] === 0) {
-                    playerY += changeY;
-                }
-            }
-        }
 
         // Redraw the player
         ctx.fillStyle = "navy";
