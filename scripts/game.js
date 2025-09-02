@@ -1,18 +1,49 @@
-// TODO: implement a light radius feature using clipping
-// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Compositing
-//  This will allow the area around the player to be seen but everything else to be blacked out, making it more exciting
+// TODO (unordered)
+// - Timer starts when game is in focus and stops when out of focus
+//      - Dont allow focus until the zoom animation is complete
+// - Start the player in the center of the maze
+//      - In the Prim algorithm, instead of choosing a random tile to start, choose center
+//      - Adjust wall offsets accordingly
+// - Determine coordinate of maze end
+//      - Render the end tile after the zoom animation is complete
 
 import { generatePrimMaze } from './prim.js';
 
-window.addEventListener("load", generateGame);
+// window.addEventListener("load", generateGame);
+let gameButton = document.getElementById("beginGameButton")
+gameButton.addEventListener('click', function() {
+    // Deactivate button
+    gameButton.disabled = true;
+
+    // Start the game
+    generateGame();
+});
 
 // Runs all game logic when the page loads
 function generateGame() {
+    let gameStartZoom = false; // determines whether to play the zoom animation at that start
     let gameCanvas = document.getElementById("gameCanvas");
+    let canvasWidth = gameCanvas.width;
+    let canvasHeight = gameCanvas.height;
+
+    // Styles
+    let backgroundColor = "black";
+    let wallColor = "black";
+    let floorColor = "beige";
+    let playerColor = "navy";
 
     // Check browser compatability with canvas
     let ctx;
-    let scale = 2;
+
+    let animationStartScale = 0.5; // The scale level to define the start of thr animation (how zoomed out it is)
+    let animationEndScale = 1; // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
+    let scale;
+
+    if (gameStartZoom) {
+        scale = animationStartScale;
+    } else {
+        scale = animationEndScale;
+    }
     if (gameCanvas.getContext) {
         ctx = gameCanvas.getContext("2d");
         ctx.scale(scale, scale); // Increase the size of each unit in the canvas (zooming in)
@@ -22,73 +53,136 @@ function generateGame() {
     }
 
     // Generate and display the maze (use odd-numbered dimensions to keep it looking nice)
-    let mazeWidth = 11;
-    let mazeHeight = 9;
+    let mazeWidth = 19;
+    let mazeHeight = 17;
     let cellSize = 20;
+
+    // NOTE: any maze-generation algorithm is expected to return a 
+    // 2D array [width][height] of 0s (floor) and 1s (walls)
     let maze = generatePrimMaze(mazeWidth, mazeHeight);
-    let wallOffsetX = 500/2/scale - (1.5*cellSize);
-    let wallOffsetY = 500/2/scale - (1.5*cellSize);
-    drawMaze();
+
+    let wallOffsetX = canvasWidth/2/scale - (1.5*cellSize);
+    let wallOffsetY = canvasHeight/2/scale - (1.5*cellSize);
 
     // Place player on game canvas
     let playerSize = Math.floor(cellSize/2);
     let playerSpeed = cellSize; // pixels per second
     // -- center player in the top-left corner of the maze
-    let playerX = 500/2/scale - Math.floor(playerSize/2);
-    let playerY = 500/2/scale - Math.floor(playerSize/2);
+    let playerX = canvasWidth/2/scale - Math.floor(playerSize/2);
+    let playerY = canvasHeight/2/scale - Math.floor(playerSize/2);
     let playerCell = [1, 1]; // Coordinate of the player
-    ctx.fillStyle = "navy";
+    ctx.fillStyle = playerColor;
     ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
-    // Game loop
-    document.addEventListener("keypress", function(e) {
-        // Do nothing if the game is not in focus
-        if (document.activeElement !== gameCanvas) {
-            return;
-        }
+    drawGame();
 
-        // Check direction of movement based on the key pressed
-        switch (e.key) {
-            case 'w':
-                movePlayer(0, playerSpeed);
-                break;
-            case 'a':
-                movePlayer(playerSpeed, 0);
-                break;
-            case 's':
-                movePlayer(0, -playerSpeed);
-                break;
-            case 'd':
-                movePlayer(-playerSpeed, 0);
-                break;
+    // Rescale zoom
+    function zoomIn() {
+        const intervalId = setInterval(function() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset the scale before changing it (or else it scales the scale)
 
-        }
-    });
+            scale = parseFloat(scale.toFixed(2));
+            ctx.scale(scale, scale); // Increase the size of each unit in the canvas (zooming in)
 
-    // Given a maze formatted as a 2D list of 0's (passage) and 1's (wall),
-    // Displays the maze on the canvas
-    function drawMaze() {
+            wallOffsetX = canvasWidth/2/scale - (1.5*cellSize);
+            wallOffsetY = canvasHeight/2/scale - (1.5*cellSize);
+            playerX = canvasWidth/2/scale - Math.floor(playerSize/2);
+            playerY = canvasHeight/2/scale - Math.floor(playerSize/2);
+            ctx.fillStyle = playerColor;
+            ctx.fillRect(playerX, playerY, playerSize, playerSize);
+
+            drawGame();
+
+            scale += 0.1;
+            if (scale >= animationEndScale) {
+                clearInterval(intervalId); // Stop the interval after 3 ticks
+                allowMovement();
+            }
+        }, 25);
+    }
+
+    function allowMovement() {
+        // Game loop
+        document.addEventListener("keypress", function(e) {
+            // Do nothing if the game is not in focus
+            if (document.activeElement !== gameCanvas) {
+                return;
+            }
+
+            // Check direction of movement based on the key pressed
+            switch (e.key) {
+                case 'w':
+                    movePlayer(0, playerSpeed);
+                    drawGame();
+                    break;
+                case 'a':
+                    movePlayer(playerSpeed, 0);
+                    drawGame();
+                    break;
+                case 's':
+                    movePlayer(0, -playerSpeed);
+                    drawGame();
+                    break;
+                case 'd':
+                    movePlayer(-playerSpeed, 0);
+                    drawGame();
+                    break;
+
+            }
+        });
+    }
+
+    // Shows the zoomed-out maze for a certain amount of time before zooming in
+    function pauseBeforeAnimation(callback) {
+        let counter = 0;
+        const intervalId = setInterval(function() {
+            counter++;
+            if (counter >= 1) {
+                clearInterval(intervalId); // Stop the interval after 3 ticks
+                callback();
+            }
+        }, 1000);
+    }
+
+    if (gameStartZoom) {
+        pauseBeforeAnimation(zoomIn);
+    } else {
+        allowMovement();
+    }
+
+    function drawGame() {
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvasWidth/scale, canvasHeight/scale);
+
+        // Fill in the background
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvasWidth/scale, canvasHeight/scale);
+
+        // Create a circular clipping path
+        // ctx.beginPath();
+        // ctx.arc(canvasWidth/2/scale, canvasHeight/2/scale, 20, 0, Math.PI * 2, true);
+        // ctx.clip();
+
+        // Draw the maze
         for (let x = 0; x < mazeWidth; x++) {
             for (let y = 0; y < mazeHeight; y++) {
                 if (maze[x][y]) { // wall
-                    ctx.fillStyle = "black";
-                    // ctx.strokeStyle = "rgb(0 0 0 / 50%)";
+                    ctx.fillStyle = wallColor;
                 } else {
-                    ctx.fillStyle = "beige";
-                    // ctx.strokeStyle = "rgb(0 255 0 / 50%)";
+                    ctx.fillStyle = floorColor;
                 }
                 ctx.fillRect(x*cellSize+wallOffsetX, y*cellSize+wallOffsetY, cellSize, cellSize);
-                // ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
             }
         }
+
+        // Draw the player
+        ctx.fillStyle = playerColor;
+        ctx.fillRect(playerX, playerY, playerSize, playerSize);
     }
 
     // Moves the player based on the amount in the x and y direction
     // changeX, changeY: number of pixels to move in respective direction
     function movePlayer(changeX, changeY) {
-        // Clear the canvas
-        ctx.clearRect(0, 0, 500, 500);
-
         // Check for collisions before drawing
         if (changeX < 0) { // moving right
             if (playerCell[0] < mazeWidth-1) { // check cell to right
@@ -122,13 +216,6 @@ function generateGame() {
                 }
             }
         }
-
-        // Redraw the maze
-        drawMaze();
-
-        // Redraw the player
-        ctx.fillStyle = "navy";
-        ctx.fillRect(playerX, playerY, playerSize, playerSize);
     }
 
 }
