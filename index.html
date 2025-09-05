@@ -4,11 +4,17 @@
         <title>Online Maze Game</title>
         <link href="./stylesheets/index.css" rel="stylesheet">
         <script src="./scripts/game.js" type="module" defer></script>
+
+        <!-- Clock files -->
+        <script src="./scripts/clock.js" type="module" defer></script>
+        <link href="./stylesheets/clock.css" rel="stylesheet">
     </head>
     <body>
         <section id="page">
-            <canvas id="gameCanvas" tabindex="0" width="900" height="900"></canvas>
+            <div id="clock_box"></div>
+            <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
             <button id="beginGameButton">BEGIN</button>
+            <!-- <h2 id="timerDisplay">0.00</h2> -->
         </section>
     </body>
 </html>

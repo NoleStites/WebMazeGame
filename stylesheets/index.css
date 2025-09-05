@@ -34,3 +34,7 @@ html, body {
 #beginGameButton:disabled {
     background-color: rgba(0,0,0,0);
 }
+
+#timerDisplay {
+    color: pink;
+}

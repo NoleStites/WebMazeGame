@@ -1,10 +1,19 @@
-// TODO (unordered)
-// - Timer starts when game is in focus and stops when out of focus
-//      - Dont allow focus until the zoom animation is complete
-// - Determine coordinate of maze end
-//      - Render the end tile after the zoom animation is complete
-
 import { generatePrimMaze } from './prim.js';
+import { adjustTime } from './clock.js';
+
+// Global vars
+var gameStarted = false; // Whether or not the game has finished the inital zoom and started
+var gameFinished = false;
+var timerRunning = false;
+
+// Page refresh logic (when user clicks refresh, but before refresh)
+window.onbeforeunload = function(event) {
+    // Perform actions here, such as saving data or displaying a confirmation.
+    // For example, to prompt the user before refreshing:
+    // const message = "Are you sure you want to leave or refresh this page?";
+    // event.returnValue = message; // Standard for most browsers
+    // return message; // For older browsers (e.g., Firefox)
+};
 
 // window.addEventListener("load", generateGame);
 let gameButton = document.getElementById("beginGameButton")
@@ -15,6 +24,65 @@ gameButton.addEventListener('click', function() {
     // Start the game
     generateGame();
 });
+
+// Stop/start timer when game has lost or gained focus
+let game = document.getElementById("gameCanvas");
+let timerDisplay = document.getElementById("timerDisplay");
+let timerID = null;
+let startTime = null;
+let ellapsedTime = null;
+
+// keep track of time spent in game pause to subject when continuing
+let pauseStart = null; // start of recent pause
+let timePaused = 0; //  time spent paused
+
+game.addEventListener("blur", function() { // 'blur' == losing focus
+    stopTimer();
+});
+game.addEventListener("focus", function() { // 'blur' == losing focus
+    startTimer();
+});
+
+function updateTimeDisplay() {
+    // let timeString = ellapsedTime.toTimeString();
+    // let timeString = ellapsedTime.toLocaleTimeString('es-ES', {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZone:"+00"});
+    // timerDisplay.innerText = timeString + `.${ms}`;
+
+    let totalSeconds = Math.floor(ellapsedTime / 1000);
+
+    let h = Math.floor(totalSeconds / 3600);
+    // let h = ellapsedTime.getHours();
+    let m = ellapsedTime.getMinutes();
+    let s = ellapsedTime.getSeconds();
+    let ms = ellapsedTime.getMilliseconds();
+    adjustTime(h, m, s, ms);
+}
+
+function startTimer() {
+    if (!timerRunning && gameStarted && !gameFinished) {
+        timerRunning = true;
+        if (pauseStart !== null) { // Dont calculate pause time if first time starting timer
+            timePaused += Date.now() - pauseStart;
+        } else {
+            startTime = Date.now();
+        }
+
+        timerID = setInterval(function() {
+            let deltaTime = Date.now() - startTime - timePaused;
+            ellapsedTime = new Date();
+            ellapsedTime.setTime(deltaTime);
+            updateTimeDisplay();
+        }, 50);
+    }
+}
+
+function stopTimer() {
+    if (timerRunning && gameStarted && !gameFinished) {
+        timerRunning = false;
+        pauseStart = Date.now();
+        clearInterval(timerID);
+    }
+}
 
 // Runs all game logic when the page loads
 function generateGame() {
@@ -52,8 +120,8 @@ function generateGame() {
 
     // Generate and display the maze (NOTE: must use odd-numbered dimensions!)
     //      - maze dimension needs follow the formula 4x + 3 (avoids double-thick outer edges and thus no finish cell)
-    let mazeWidth = 15;
-    let mazeHeight = 19;
+    let mazeWidth = 19;
+    let mazeHeight = 15;
     let cellSize = 20;
 
     // NOTE: any maze-generation algorithm is expected to return a 
@@ -131,6 +199,17 @@ function generateGame() {
 
     drawGame();
 
+    // Apply zoom animation if there is one
+    if (gameStartZoom) {
+        pauseBeforeAnimation(zoomIn);
+    } else {
+        gameStarted = true;
+        if (game.activeElement) {
+            startTimer();
+        }
+        allowMovement();
+    }
+
     // Calculates the amount of units to offset the maze from the to-left corner to have
     // the player positioned properly
     //  startPosition: "center" or "topLeft"
@@ -170,44 +249,52 @@ function generateGame() {
             drawGame();
 
             scale += 0.1;
+
+            // End-of-zoom/start-of-game logic
             if (scale >= animationEndScale) {
                 clearInterval(intervalId); // Stop the interval after 3 ticks
                 drawFinishCell = true;
                 drawGame(); // To render the finish cell at start
+                gameStarted = true;
+                if (game === document.activeElement) {
+                    startTimer();
+                }
                 allowMovement();
             }
         }, 25);
     }
 
+    function checkUserMovement(e) {
+        // Do nothing if the game is not in focus
+        if (document.activeElement !== gameCanvas) {
+            return;
+        }
+
+        // Check direction of movement based on the key pressed
+        switch (e.key) {
+            case 'w':
+                movePlayer(0, playerSpeed);
+                drawGame();
+                break;
+            case 'a':
+                movePlayer(playerSpeed, 0);
+                drawGame();
+                break;
+            case 's':
+                movePlayer(0, -playerSpeed);
+                drawGame();
+                break;
+            case 'd':
+                movePlayer(-playerSpeed, 0);
+                drawGame();
+                break;
+
+        }
+    }
+
     function allowMovement() {
         // Game loop
-        document.addEventListener("keypress", function(e) {
-            // Do nothing if the game is not in focus
-            if (document.activeElement !== gameCanvas) {
-                return;
-            }
-
-            // Check direction of movement based on the key pressed
-            switch (e.key) {
-                case 'w':
-                    movePlayer(0, playerSpeed);
-                    drawGame();
-                    break;
-                case 'a':
-                    movePlayer(playerSpeed, 0);
-                    drawGame();
-                    break;
-                case 's':
-                    movePlayer(0, -playerSpeed);
-                    drawGame();
-                    break;
-                case 'd':
-                    movePlayer(-playerSpeed, 0);
-                    drawGame();
-                    break;
-
-            }
-        });
+        document.addEventListener("keypress", checkUserMovement);
     }
 
     // Shows the zoomed-out maze for a certain amount of time before zooming in
@@ -220,12 +307,6 @@ function generateGame() {
                 callback();
             }
         }, 1000);
-    }
-
-    if (gameStartZoom) {
-        pauseBeforeAnimation(zoomIn);
-    } else {
-        allowMovement();
     }
 
     function drawGame() {
@@ -314,8 +395,20 @@ function generateGame() {
             return;
         }
         
-        // Winning logic goes here
-        console.log("WINNER");
+        document.removeEventListener("keypress", checkUserMovement);
+        stopTimer();
+        gameFinished = true;
+        let deltaTime = Date.now() - startTime - timePaused;
+        let solveTime = new Date();
+        solveTime.setTime(deltaTime);
+        let totalSeconds = Math.floor(deltaTime / 1000);
+    
+        let h = Math.floor(totalSeconds / 3600);
+        let m = solveTime.getMinutes();
+        let s = solveTime.getSeconds();
+        let ms = solveTime.getMilliseconds();
+        // console.log(solveTime.toTimeString());
+        console.log(`Solve Time: ${h}:${m}:${s}:${ms}`);
     }   
 
 }
