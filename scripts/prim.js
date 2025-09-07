@@ -1,10 +1,12 @@
+import { splitmix32 } from "./splitMix32.js";
+
 // Uses Prim's iterative randomized algorithm for maze generation
 // Returns a 2D array indexed as maze[x][y]:
 //  - outer array length === width
 //  - inner array length === height
 // 1: wall, 0: passage
 // startPosition: "center" or "topLeft"
-export function generatePrimMaze(width, height, startPosition) {
+export function generatePrimMaze(seed, width, height, startPosition) {
     // Make sure dimensions are odd so passages can be surrounded by walls
     if (width % 2 === 0) width++;
     if (height % 2 === 0) height++;
@@ -20,10 +22,14 @@ export function generatePrimMaze(width, height, startPosition) {
     const inBounds = (x, y) =>
         x > 0 && y > 0 && x < width - 1 && y < height - 1;
 
+
+    // Our random number generator
+    const prng = splitmix32(seed);
+
     // Pick odd coordinates inside the border
     const randOdd = (max) => {
         const count = Math.floor((max - 1) / 2); // number of odd slots inside border
-        const idx = Math.floor(Math.random() * count); // 0..count-1
+        const idx = Math.floor(prng() * count); // 0..count-1
         return idx * 2 + 1; // 1,3,5,...
     };
 
@@ -66,7 +72,7 @@ export function generatePrimMaze(width, height, startPosition) {
     addWalls(startX, startY);
 
     while (walls.length) {
-        const i = Math.floor(Math.random() * walls.length);
+        const i = Math.floor(prng() * walls.length);
         const [wx, wy, fx, fy] = walls[i];
         walls.splice(i, 1);
 
@@ -76,6 +82,50 @@ export function generatePrimMaze(width, height, startPosition) {
         addWalls(wx, wy);
         }
     }
+
+    // Choose a finish tile
+    //      For "center" start, lies in outer ring of maze
+    //      For "topLeft" start, lies on right- or bottom-most edge
+    let possibleFinishCells = []; // A list of all cell coordinates (passage tiles) that can have a finish tile
+    if (startPosition == "topLeft") {
+        let rightColumn = width-2;
+        let bottomRow = height-2;
+        for (let x = 1; x <= rightColumn; x++) {
+            if (x == rightColumn) {
+                for (let y = 1; y <= bottomRow; y++) {
+                    if (maze[x][y] == 0) { // Valid tile for finish
+                        possibleFinishCells.push([x, y]);
+                    }
+                }
+            }
+            if (x < rightColumn) { // Look at bottom row
+                if (maze[x][bottomRow] == 0) { // Valid tile for finish
+                    possibleFinishCells.push([x, bottomRow]);
+                }
+            }
+        }
+    }
+    else if (startPosition == "center") {
+        for (let x = 1; x < width-1; x++) {
+            if (x > 1 && x < width-2) {
+                if (maze[x][1] == 0) {
+                    possibleFinishCells.push([x, 1]);
+                }
+                if (maze[x][height-2] == 0) {
+                    possibleFinishCells.push([x, height-2]);
+                }
+            }
+            else { // left and right edges
+                for (let y = 1; y < height-1; y++) {
+                    if (maze[x][y] == 0) {
+                        possibleFinishCells.push([x, y]);
+                    }
+                }
+            }
+        }
+    }
+    let finishCell = possibleFinishCells[Math.floor(Math.random() * possibleFinishCells.length)];
+    maze[finishCell[0]][finishCell[1]] = 2; // 2 for finish cell
 
     return maze; // maze[x][y]; e.g., maze[12][8] exists for width=13, height=9
 }

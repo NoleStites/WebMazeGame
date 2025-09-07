@@ -2,6 +2,7 @@ import { generatePrimMaze } from './prim.js';
 import { adjustTime } from './clock.js';
 
 // Global vars
+var gameSeed = (Math.random()*2**32)>>>0;
 var gameStarted = false; // Whether or not the game has finished the inital zoom and started
 var gameFinished = false;
 var timerRunning = false;
@@ -86,7 +87,7 @@ function stopTimer() {
 
 // Runs all game logic when the page loads
 function generateGame() {
-    let gameStartZoom = true; // determines whether to play the zoom animation at that start
+    let gameStartZoom = false; // determines whether to play the zoom animation at that start
     let gameCanvas = document.getElementById("gameCanvas");
     let canvasWidth = gameCanvas.width;
     let canvasHeight = gameCanvas.height;
@@ -102,7 +103,7 @@ function generateGame() {
     let ctx;
 
     let animationStartScale = 0.5; // The scale level to define the start of thr animation (how zoomed out it is)
-    let animationEndScale = 6; // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
+    let animationEndScale = 1; // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
     let scale;
 
     if (gameStartZoom) {
@@ -120,58 +121,16 @@ function generateGame() {
 
     // Generate and display the maze (NOTE: must use odd-numbered dimensions!)
     //      - maze dimension needs follow the formula 4x + 3 (avoids double-thick outer edges and thus no finish cell)
-    let mazeWidth = 19;
-    let mazeHeight = 15;
+    let mazeWidth = 7;
+    let mazeHeight = 7;
     let cellSize = 20;
 
     // NOTE: any maze-generation algorithm is expected to return a 
-    // 2D array [width][height] of 0s (floor) and 1s (walls) and 2s (finish cell)
+    // 2D array [width][height] of 0s (floor) and 1s (walls) and 2 (finish cell)
     let startPosition = "center"; // "center" or "topLeft"
-    let maze = generatePrimMaze(mazeWidth, mazeHeight, startPosition);
-
-    // Choose a finish tile
-    //      For "center" start, lies in outer ring of maze
-    //      For "topLeft" start, lies on right- or bottom-most edge
-    let possibleFinishCells = []; // A list of all cell coordinates (passage tiles) that can have a finish tile
-    if (startPosition == "topLeft") {
-        let rightColumn = mazeWidth-2;
-        let bottomRow = mazeHeight-2
-        for (let x = 1; x <= rightColumn; x++) {
-            if (x == rightColumn) {
-                for (let y = 1; y <= bottomRow; y++) {
-                    if (maze[x][y] == 0) { // Valid tile for finish
-                        possibleFinishCells.push([x, y]);
-                    }
-                }
-            }
-            if (x < rightColumn) { // Look at bottom row
-                if (maze[x][bottomRow] == 0) { // Valid tile for finish
-                    possibleFinishCells.push([x, bottomRow]);
-                }
-            }
-        }
-    }
-    else if (startPosition == "center") {
-        for (let x = 1; x < mazeWidth-1; x++) {
-            if (x > 1 && x < mazeWidth-2) {
-                if (maze[x][1] == 0) {
-                    possibleFinishCells.push([x, 1]);
-                }
-                if (maze[x][mazeHeight-2] == 0) {
-                    possibleFinishCells.push([x, mazeHeight-2]);
-                }
-            }
-            else { // left and right edges
-                for (let y = 1; y < mazeHeight-1; y++) {
-                    if (maze[x][y] == 0) {
-                        possibleFinishCells.push([x, y]);
-                    }
-                }
-            }
-        }
-    }
-    let finishCell = possibleFinishCells[Math.floor(Math.random() * possibleFinishCells.length)];
-    maze[finishCell[0]][finishCell[1]] = 2; // 2 for finish cell
+    let maze = generatePrimMaze(gameSeed, mazeWidth, mazeHeight, startPosition);
+    console.log(maze);
+    
     let drawFinishCell = !gameStartZoom; // Only draw finish when zoom animation is complete
 
     // Determine how much to offset the walls from the top-left corner
@@ -391,7 +350,7 @@ function generateGame() {
     // Compares the player's position to the finish cell location
     // and applies winning procedures if they match
     function checkForVictory() {
-        if ((playerCell[0] != finishCell[0]) || (playerCell[1] != finishCell[1])) { // No victory
+        if (maze[playerCell[0]][playerCell[1]] !== 2) { // No victory
             return;
         }
         
@@ -407,6 +366,8 @@ function generateGame() {
         let m = solveTime.getMinutes();
         let s = solveTime.getSeconds();
         let ms = solveTime.getMilliseconds();
+        adjustTime(h, m, s, ms); // Display the final time
+
         // console.log(solveTime.toTimeString());
         console.log(`Solve Time: ${h}:${m}:${s}:${ms}`);
     }   
