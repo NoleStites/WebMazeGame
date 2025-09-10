@@ -124,7 +124,7 @@ export function generatePrimMaze(seed, width, height, startPosition) {
             }
         }
     }
-    let finishCell = possibleFinishCells[Math.floor(Math.random() * possibleFinishCells.length)];
+    let finishCell = possibleFinishCells[Math.floor(prng() * possibleFinishCells.length)];
     maze[finishCell[0]][finishCell[1]] = 2; // 2 for finish cell
 
     return maze; // maze[x][y]; e.g., maze[12][8] exists for width=13, height=9

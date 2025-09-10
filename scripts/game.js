@@ -1,8 +1,120 @@
 import { generatePrimMaze } from './prim.js';
 import { adjustTime } from './clock.js';
+import { getDailyMazeConfig, submitPlayerScore } from './firebase.js';
+
+// Ensure your getDailyMazeConfig function is defined and imported if in another file
+// (It returns a Promise, which is what 'await' needs)
+
+// Let's create an async function for your game's main initialization
+async function initializeGame() {
+    console.log("Starting game initialization...");
+
+    let mazeConfig = null; // Initialize to null
+
+    try {
+        // Await the result of the asynchronous function
+        // The code here will pause until getDailyMazeConfig completes
+        let todaysDate = "2025-9-9";
+
+        // === REQUIRED CONFIG OPTIONS: ===
+        // mazeAlgorithm = "prim";      // The type of maze generation algorithm to use: "prim"
+        // gameStartZoom = true;        // Determines whether to play the zoom animation at the start
+        // animationStartScale = 0.5;   // The scale level to define the start of the animation (how zoomed out it is)
+        // animationEndScale = 1;       // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
+        // startPosition = "center";    // Where the player starts in the maze: "center" or "topLeft"
+
+        // canvasColor = "black";       // The color of the canvas itself (the area around the maze)
+        // finishCellColor = "green";   // The color of the cell marking the end of the maze
+        // wallColor = "black";         // The color of the walls of the maze
+        // floorColor = "beige";        // The color of the passages within the maze
+        // playerColor = "navy";        // The color of the player
+        mazeConfig = await getDailyMazeConfig(todaysDate);
+
+        if (mazeConfig) {
+            console.log("Today's Maze Config:", mazeConfig);
+            // Now you can use mazeConfig.seed, mazeConfig.width, mazeConfig.height
+            // directly here or pass them to other functions
+            generateMaze(mazeConfig.seed, mazeConfig.width, mazeConfig.height, mazeConfig.mazeAlgorithm, mazeConfig.playZoom, mazeConfig.zoomStartScale, mazeConfig.zoomEndScale, mazeConfig.startPosition, mazeConfig.canvasColor, mazeConfig.finishCellColor, mazeConfig.wallColor, mazeConfig.floorColor, mazeConfig.playerColor);
+            loadLeaderboard(todaysDate); // Assuming you'd get the date from config or elsewhere
+        } else {
+            console.warn("No maze config found for today. Cannot start game.");
+            // Handle the case where no maze config is available
+            displayErrorMessage("Failed to load daily maze. Please try again later.");
+            return; // Stop initialization if critical data is missing
+        }
+    } catch (error) {
+        // Catch any errors that might occur during the async operation
+        console.error("An error occurred during game initialization:", error);
+        displayErrorMessage("An error occurred. Check console for details.");
+        return;
+    }
+
+    // All code here will only execute AFTER the mazeConfig has been successfully fetched
+    // (or if an error occurred and was handled).
+    // This is where the rest of your game's setup logic would go.
+    console.log("Maze generated. Proceeding with game setup...");
+    // setupInputListeners();
+    // startGameLoop();
+    // ... all other game initialization steps
+}
+
+function loadLeaderboard(dateString) {
+    console.log(`Loading leaderboard for ${dateString}...`);
+    // Your actual leaderboard loading code (e.g., calling listenForLeaderboard)
+}
+
+function displayErrorMessage(message) {
+    console.log(`Displaying error message: ${message}`);
+    // Your UI code to show an error
+}
+
+// function setupInputListeners() { console.log("Setting up input listeners."); }
+
+// function startGameLoop() { console.log("Starting game loop."); }
+
+// Don't forget to actually call your async initialization function to start your game!
+initializeGame();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function generateMaze(gameSeed, mazeWidth, mazeHeight, mazeAlgorithm, gameStartZoom, animationStartScale, animationEndScale, startPosition, canvasColor, finishCellColor, wallColor, floorColor, playerColor) {
+
+// let gameStartZoom = true; // determines whether to play the zoom animation at that start
+// let animationStartScale = 0.5; // The scale level to define the start of the animation (how zoomed out it is)
+// let animationEndScale = 1; // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
+// let startPosition = "center"; // "center" or "topLeft"
+// let mazeAlgorithm = "prim";
+// // Styles
+// let canvasColor = "purple";
+// let finishCellColor = "green";
+// let wallColor = "black";
+// let floorColor = "beige";
+// let playerColor = "navy";
 
 // Global vars
-var gameSeed = (Math.random()*2**32)>>>0;
+// var gameSeed = (Math.random()*2**32)>>>0;
+// var gameSeed = config.seed;
 var gameStarted = false; // Whether or not the game has finished the inital zoom and started
 var gameFinished = false;
 var timerRunning = false;
@@ -87,23 +199,15 @@ function stopTimer() {
 
 // Runs all game logic when the page loads
 function generateGame() {
-    let gameStartZoom = false; // determines whether to play the zoom animation at that start
     let gameCanvas = document.getElementById("gameCanvas");
     let canvasWidth = gameCanvas.width;
     let canvasHeight = gameCanvas.height;
 
-    // Styles
-    let backgroundColor = "black";
-    let finishCellColor = "green";
-    let wallColor = "black";
-    let floorColor = "beige";
-    let playerColor = "navy";
+    gameCanvas.style.backgroundColor = canvasColor;
 
     // Check browser compatability with canvas
     let ctx;
 
-    let animationStartScale = 0.5; // The scale level to define the start of thr animation (how zoomed out it is)
-    let animationEndScale = 1; // Adjust this to change the play zoom level (high => zoom in; smaller => zoom out)
     let scale;
 
     if (gameStartZoom) {
@@ -121,15 +225,21 @@ function generateGame() {
 
     // Generate and display the maze (NOTE: must use odd-numbered dimensions!)
     //      - maze dimension needs follow the formula 4x + 3 (avoids double-thick outer edges and thus no finish cell)
-    let mazeWidth = 7;
-    let mazeHeight = 7;
+    // let mazeWidth = 7;
+    // let mazeHeight = 7;
+    // let mazeWidth = config.width;
+    // let mazeHeight = config.height;
     let cellSize = 20;
 
     // NOTE: any maze-generation algorithm is expected to return a 
     // 2D array [width][height] of 0s (floor) and 1s (walls) and 2 (finish cell)
-    let startPosition = "center"; // "center" or "topLeft"
-    let maze = generatePrimMaze(gameSeed, mazeWidth, mazeHeight, startPosition);
-    console.log(maze);
+    let maze;
+    if (mazeAlgorithm === "prim") {
+        maze = generatePrimMaze(gameSeed, mazeWidth, mazeHeight, startPosition);
+    }
+    else {
+        maze = generatePrimMaze(gameSeed, mazeWidth, mazeHeight, startPosition);
+    }
     
     let drawFinishCell = !gameStartZoom; // Only draw finish when zoom animation is complete
 
@@ -273,8 +383,8 @@ function generateGame() {
         ctx.clearRect(0, 0, canvasWidth/scale, canvasHeight/scale);
 
         // Fill in the background
-        ctx.fillStyle = backgroundColor;
-        // ctx.fillRect(0, 0, canvasWidth/scale, canvasHeight/scale);
+        ctx.fillStyle = canvasColor;
+        ctx.fillRect(0, 0, canvasWidth/scale, canvasHeight/scale);
 
         // Create a circular clipping path
         // ctx.beginPath();
@@ -373,3 +483,5 @@ function generateGame() {
     }   
 
 }
+
+} // END generateMaze
