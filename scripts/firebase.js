@@ -4,6 +4,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
 import { getDatabase, ref, set, get, query, orderByChild, limitToFirst, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js"; // <--- Add this import!
+import { 
+    getAuth, 
+    signInAnonymously, 
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    EmailAuthProvider,
+    linkWithCredential
+ } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,9 +30,194 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// Get a reference to the Authentication service
+export const auth = getAuth(app); // Pass your 'app' instance
+
+
+/**
+ * Saves or updates a user's profile information in the Realtime Database.
+ * This is typically called after a user signs up or links an account.
+ * @param {import("firebase/auth").User} user - The Firebase User object.
+ * @param {string} displayName - The display name provided by the user.
+ */
+export async function saveUserProfileToDatabase(user, displayName) {
+    if (!user || !user.uid) {
+        console.error("Attempted to save profile with null or invalid user object.");
+        return;
+    }
+    const userProfileRef = ref(database, `user_profiles/${user.uid}`);
+    try {
+        await set(userProfileRef, {
+            email: user.email || null, // Firebase User object may not always have email (e.g., anonymous before linking)
+            displayName: displayName,
+            // You can add other default profile fields here if needed
+            createdAt: Date.now() // Useful for tracking creation time
+        });
+        console.log(`User profile for ${user.uid} saved/updated in DB with displayName: ${displayName}`);
+    } catch (error) {
+        console.error("Error saving user profile to DB:", error);
+        throw error; // Re-throw to allow calling functions to handle
+    }
+}
+
+
+// export let currentUserUid = null; // Variable to store the current user's UID
+// export let currentFirebaseUser = null; // Firebase user object
+
+// Internal variables to hold the current user and UID
+let _currentUser = null;
+let _currentUid = null;
+
+// onAuthStateChanged listener to keep _currentUser and _currentUid updated
+
+onAuthStateChanged(auth, (user) => {
+    _currentUser = user;
+    _currentUid = user ? user.uid : null;
+    console.log("firebase.js: Auth state updated. Current UID:", _currentUid);
+    // If no user is present, attempt anonymous sign-in to keep a session alive
+    if (!user) {
+        signInAnonymously(auth).catch(error => {
+            console.error("Error signing in anonymously:", error);
+        });
+    }
+});
+
+// Export getter functions for the current user and UID
+export function getCurrentUser() {
+    return _currentUser;
+}
+
+export function getCurrentUserUid() {
+    return _currentUid;
+}
+
+
+let authCheckCompleted = false; // Flag to ensure we only proceed once
+
+
+
+
+// Function to sign in anonymously (call this when your app starts or user needs to log in)
+async function loginAnonymously() {
+  try {
+    const userCredential = await signInAnonymously(auth);
+    // User is automatically handled by onAuthStateChanged listener above
+  } catch (error) {
+    console.error("Anonymous sign-in failed:", error);
+  }
+}
+
+// Call this somewhere to kick off the anonymous login process, e.g., when your game loads
+// loginAnonymously();
+
+// Now, when you submit a player score, you'll use 'currentUserUid' for the playerId
+// submitPlayerScore(dateString, currentUserUid, playerName, timeMs);
+
+async function signUpWithEmail(email, password, displayName) { // Add displayName parameter
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    await saveUserProfileToDatabase(user, displayName);
+
+    // Store the display name and other profile info in Realtime Database
+    // We'll create a new node for user_profiles
+    const userProfileRef = ref(database, `user_profiles/${user.uid}`);
+    await set(userProfileRef, {
+      email: user.email, // Storing email is optional, but common
+      displayName: displayName,
+      createdAt: Date.now() // Useful for tracking
+      // Add other default profile fields here (e.g., default avatar URL)
+    });
+
+    console.log("User signed up successfully:", user.uid, "DisplayName:", displayName);
+    alert("Account created successfully!");
+    // Optional: If you ALSO want it on the Auth user object (for user.displayName), uncomment this:
+    // await updateProfile(user, { displayName: displayName });
+
+  } catch (error) {
+    console.error("Error signing up:", error);
+    alert(`Sign up failed: ${error.message}`);
+  }
+}
+
+// Example usage (assuming you have input fields for email, password, and displayName)
+// const emailInput = document.getElementById('email-signup').value;
+// const passwordInput = document.getElementById('password-signup').value;
+// const displayNameInput = document.getElementById('displayname-signup').value;
+// signUpWithEmail(emailInput, passwordInput, displayNameInput);
+
+async function linkAnonymousToEmail(email, password, displayName) { // Add displayName parameter
+  if (!currentFirebaseUser || !currentFirebaseUser.isAnonymous) {
+    console.warn("User is not anonymous or not signed in. Cannot link.");
+    alert("You must be signed in anonymously to link an account.");
+    return;
+  }
+
+  try {
+    // 1. Create an Email/Password credential object
+    const credential = EmailAuthProvider.credential(email, password);
+
+    // 2. Link the current anonymous user to this new credential
+    // All data associated with the anonymous UID will now belong to the new permanent UID
+    const userCredential = await linkWithCredential(currentFirebaseUser, credential);
+    const user = userCredential.user; // Get the newly linked permanent user object
+
+    await saveUserProfileToDatabase(user, displayName);
+
+
+    // 3. Store the display name and other profile info in Realtime Database
+    // This will either create a new profile or update an existing one if the email
+    // was already associated with a permanent account before linking.
+    const userProfileRef = ref(database, `user_profiles/${user.uid}`);
+    await set(userProfileRef, {
+      email: user.email,
+      displayName: displayName,
+      lastLinked: Date.now() // Optional: Track when it was linked
+      // You might also want to copy over any specific anonymous user data from your DB
+      // here if you were storing it separately from user_progress.
+    });
+
+    // Optional: If you ALSO want to update the displayName directly on the Firebase Auth User profile
+    // for use with user.displayName property, uncomment the line below.
+    // import { updateProfile } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    // await updateProfile(user, { displayName: displayName });
+
+    console.log("Anonymous account successfully linked to Email/Password:", user.uid, "DisplayName:", displayName);
+    alert("Your game progress is now saved to your email account!");
+
+  } catch (error) {
+    console.error("Error linking account:", error);
+    // Handle specific errors
+    if (error.code === 'auth/credential-already-in-use') {
+        alert("This email is already linked to another account. Please use a different email or sign in with it.");
+    } else {
+        alert(`Account linking failed: ${error.message}`);
+    }
+  }
+}
+
+
+async function signOutUser() {
+  try {
+    await auth.signOut();
+    console.log("User signed out.");
+    alert("You have been signed out.");
+    // After signOut, onAuthStateChanged will fire with a null user.
+    // You might want to automatically sign them in anonymously again here
+    // if your game requires a user to always be signed in.
+    loginAnonymously(); // Re-sign them in anonymously if you want
+  } catch (error) {
+    console.error("Error signing out:", error);
+    alert(`Sign out failed: ${error.message}`);
+  }
+}
+
+
 // Get a reference to the Realtime Database service
 // Use the modular 'getDatabase' function and pass your 'app' instance
-const database = getDatabase(app); // <--- Corrected line!
+export const database = getDatabase(app); // <--- Corrected line!
 
 
 
@@ -46,7 +240,7 @@ const database = getDatabase(app); // <--- Corrected line!
  * @param {number} playerColor - The color of the player
  */
 async function setDailyMazeConfig(dateString, seed, width, height, mazeAlgorithm, playZoom, zoomStartScale, zoomEndScale, startPosition, canvasColor, finishCellColor, wallColor, floorColor, playerColor) {
-    const mazeRef = ref(database, `daily_leaderboards/${dateString}`);
+    const mazeRef = ref(database, `daily_leaderboards/${dateString}/config`);
     try {
         await set(mazeRef, {
             seed: seed,
@@ -74,7 +268,7 @@ async function setDailyMazeConfig(dateString, seed, width, height, mazeAlgorithm
 // setDailyMazeConfig("2023-10-28", 123456789, 15, 15);
 // setDailyMazeConfig("2023-10-27", 987654321, 10, 10); // Add some historical data too!
 
-// setDailyMazeConfig("2025-9-9", (Math.random()*2**32)>>>0, 15, 15, "prim", true, 0.5, 1, "center", "black", "green", "black", "beige", "navy");
+// setDailyMazeConfig("2025-9-10", (Math.random()*2**32)>>>0, 15, 15, "prim", true, 0.5, 1, "center", "black", "green", "black", "beige", "navy");
 
 
 
@@ -87,13 +281,13 @@ async function setDailyMazeConfig(dateString, seed, width, height, mazeAlgorithm
  * @param {number} timeMs - The completion time in milliseconds.
  */
 export async function submitPlayerScore(dateString, playerId, playerName, timeMs) {
-    const scoreRef = ref(database, `daily_leaderboards/${dateString}/${playerId}`);
+    const scoreRef = ref(database, `daily_leaderboards/${dateString}/scores/${playerId}`);
     try {
         await set(scoreRef, {
             name: playerName,
             time_ms: timeMs
         });
-        console.log(`Score for ${playerName} on ${dateString} submitted successfully!`);
+        // console.log(`Score for ${playerName} on ${dateString} submitted successfully!`);
     } catch (error) {
         console.error("Error submitting player score:", error);
     }
@@ -137,7 +331,7 @@ const existingPlayerId = "player_abc123"; // Or whatever ID you're using for a c
  *                                     }
  */
 export async function getDailyMazeConfig(dateString) {
-    const mazeRef = ref(database, `daily_leaderboards/${dateString}`);
+    const mazeRef = ref(database, `daily_leaderboards/${dateString}/config`);
     try {
         const snapshot = await get(mazeRef);
         if (snapshot.exists()) {
@@ -195,8 +389,8 @@ export async function getDailyMazeConfig(dateString) {
  * @param {function(Array)} callback - A callback function that receives the sorted leaderboard array.
  * @returns {function()} - A function to unsubscribe the listener.
  */
-function listenForLeaderboard(dateString, limit, callback) {
-    const leaderboardRef = ref(database, `daily_leaderboards/${dateString}`);
+export function listenForLeaderboard(dateString, limit, callback) {
+    const leaderboardRef = ref(database, `daily_leaderboards/${dateString}/scores`);
     const topScoresQuery = query(
         leaderboardRef,
         orderByChild('time_ms'), // Sort by the 'time_ms' property

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Daily Maze</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.png">
+        <link href="../stylesheets/daily.css" rel="stylesheet">
+
+        <!-- The core Firebase JS SDK is always required and must be listed first -->
+        <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+
+        <!-- Add the Firebase products that you want to use -->
+        <!-- For Realtime Database, you'll need firebase-database-compat.js -->
+        <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
+
+        <script src="../scripts/firebase.js" type="module"></script>
+
+        <!-- Game script -->
+        <script src="../scripts/game.js" type="module" defer></script>
+
+        <!-- Clock files -->
+        <script src="../scripts/clock.js" type="module" defer></script>
+        <link href="../stylesheets/clock.css" rel="stylesheet">
+    </head>
+    <body>
+        <section id="page">
+            <div id="gameContainer">
+                <div id="clock_box"></div>
+                <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
+                <button id="beginGameButton">BEGIN</button>
+            </div>
+            <div id="leaderboard">
+                <div id="leaderboardTitle">Leaderboard</div>
+                <ul id="leaderboardEntryList"></ul>
+            </div>
+        </section>
+    </body>
+</html>

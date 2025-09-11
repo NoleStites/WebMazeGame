@@ -1,0 +1,93 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100vw;
+    height: 100vh;
+}
+
+#page {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(41, 41, 41);
+}
+
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    outline: 2px solid red;
+}
+
+#gameCanvas {
+    background-color: rgb(209, 209, 209);
+}
+#gameCanvas:focus {
+    outline: 4px solid navy;
+}
+
+#beginGameButton {
+    font-size: 20pt;
+    padding: 10px;
+}
+#beginGameButton:disabled {
+    background-color: rgba(0,0,0,0);
+}
+
+#timerDisplay {
+    color: pink;
+}
+
+/* LEADERBOARD STYLES */
+#leaderboard {
+    width: 500px;
+    height: 500px;
+    outline: 2px solid purple;
+    font-size: 20pt;
+}
+
+#leaderboardTitle {
+    background-color: navy;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+}
+
+.leaderboardEntry {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: navy;
+    background-color: rgb(190, 190, 190);
+}
+
+.currentPlayerEntry {
+    color: yellow;
+}
+
+.entryNumber {
+    height: fit-content;
+    width: 50px;
+    padding: 10px;
+    text-align: center;
+    background-color: rgb(167, 167, 167);
+}
+
+.nameTimeContainer {
+    width: 100%;
+    padding: 0px 20px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+}
