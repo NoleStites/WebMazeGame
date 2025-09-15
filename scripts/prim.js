@@ -4,7 +4,7 @@ import { splitmix32 } from "./splitMix32.js";
 // Returns a 2D array indexed as maze[x][y]:
 //  - outer array length === width
 //  - inner array length === height
-// 1: wall, 0: passage
+// 1: wall, 0: passage, 2: finish cell
 // startPosition: "center" or "topLeft"
 export function generatePrimMaze(seed, width, height, startPosition) {
     // Make sure dimensions are odd so passages can be surrounded by walls
@@ -83,49 +83,34 @@ export function generatePrimMaze(seed, width, height, startPosition) {
         }
     }
 
-    // Choose a finish tile
-    //      For "center" start, lies in outer ring of maze
-    //      For "topLeft" start, lies on right- or bottom-most edge
-    let possibleFinishCells = []; // A list of all cell coordinates (passage tiles) that can have a finish tile
-    if (startPosition == "topLeft") {
-        let rightColumn = width-2;
-        let bottomRow = height-2;
-        for (let x = 1; x <= rightColumn; x++) {
-            if (x == rightColumn) {
-                for (let y = 1; y <= bottomRow; y++) {
-                    if (maze[x][y] == 0) { // Valid tile for finish
-                        possibleFinishCells.push([x, y]);
-                    }
-                }
-            }
-            if (x < rightColumn) { // Look at bottom row
-                if (maze[x][bottomRow] == 0) { // Valid tile for finish
-                    possibleFinishCells.push([x, bottomRow]);
-                }
-            }
-        }
-    }
-    else if (startPosition == "center") {
-        for (let x = 1; x < width-1; x++) {
-            if (x > 1 && x < width-2) {
-                if (maze[x][1] == 0) {
-                    possibleFinishCells.push([x, 1]);
-                }
-                if (maze[x][height-2] == 0) {
-                    possibleFinishCells.push([x, height-2]);
-                }
-            }
-            else { // left and right edges
-                for (let y = 1; y < height-1; y++) {
-                    if (maze[x][y] == 0) {
-                        possibleFinishCells.push([x, y]);
-                    }
+    // Determine the farthest cell from the starting point (will become finish cell)
+    function findFarthestCell(maze, startX, startY) {
+        const width = maze.length, height = maze[0].length;
+        const visited = Array.from({ length: width }, () => Array(height).fill(false));
+        let queue = [[startX, startY, 0]];
+        visited[startX][startY] = true;
+
+        let farthest = [startX, startY, 0];
+        const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+
+        while (queue.length) {
+            const [x, y, dist] = queue.shift();
+            if (dist > farthest[2]) farthest = [x, y, dist];
+            for (const [dx, dy] of directions) {
+                const nx = x + dx, ny = y + dy;
+                if (nx >= 0 && ny >= 0 && nx < width && ny < height &&
+                    !visited[nx][ny] && maze[nx][ny] === 0) {
+                    visited[nx][ny] = true;
+                    queue.push([nx, ny, dist + 1]);
                 }
             }
         }
+        return [farthest[0], farthest[1]];
     }
-    let finishCell = possibleFinishCells[Math.floor(prng() * possibleFinishCells.length)];
-    maze[finishCell[0]][finishCell[1]] = 2; // 2 for finish cell
+
+    // Determine finish cell
+    const [fx, fy] = findFarthestCell(maze, startX, startY); // Finish cell coordinates
+    maze[fx][fy] = 2;
 
     return maze; // maze[x][y]; e.g., maze[12][8] exists for width=13, height=9
 }

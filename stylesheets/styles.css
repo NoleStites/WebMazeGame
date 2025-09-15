@@ -1,0 +1,50 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100vw;
+    height: 100vh;
+}
+
+#page {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(41, 41, 41);
+}
+
+form {
+    background-color: white;
+}
+
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameCanvas {
+    background-color: rgb(209, 209, 209);
+}
+#gameCanvas:focus {
+    outline: 4px solid navy;
+}
+
+#beginGameButton {
+    font-size: 20pt;
+    padding: 10px;
+}
+#beginGameButton:disabled {
+    background-color: rgba(0,0,0,0);
+}
+
+#timerDisplay {
+    color: pink;
+}

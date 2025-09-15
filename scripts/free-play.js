@@ -1,96 +1,27 @@
 import { generatePrimMaze } from './prim.js';
 import { adjustTime } from './clock.js';
-import { getDailyMazeConfig, submitPlayerScore, listenForLeaderboard, auth, getCurrentUser, getCurrentUserUid, database } from './firebase.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { ref, get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 let pageContent = document.getElementById("page");
 let todaysDate = "2025-9-10";
 
-// This function resolves once the initial Firebase Auth state is known.
-function awaitAuthReady() {
-  return new Promise(resolve => {
-    // onAuthStateChanged fires immediately with the current state
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      unsubscribe(); // Unsubscribe immediately after the first event
-      resolve(user); // Resolve the Promise with the user object
-    });
-  });
-}
-
-// Let's create an async function for your game's main initialization
-async function checkAuthentication() {
-    // console.log("Starting game initialization...");
-
-    // 1. Initial State: Hide main content, show loading indicator
-    if (pageContent) pageContent.style.display = 'none';   
-
-    let mazeConfig = null; // Initialize to null
-
-    try {
-        // 2. Wait for the initial authentication state to be definitively known
-        const user = await awaitAuthReady(); // This pauses execution until auth state is confirmed
-
-        // 3. Perform the authentication check
-        if (user && !user.isAnonymous) {
-            // User is permanently authenticated - proceed with game initialization!
-            // console.log("Authenticated permanent user detected:", user.uid);
-
-            // Safely get the current user details using your getter functions
-            const currentUserUid = getCurrentUserUid();
-            const currentFirebaseUser = getCurrentUser();
-
-            // Get display name (from Auth object or your user_profiles node)
-            let currentUserName = currentFirebaseUser.displayName;
-            if (!currentUserName) {
-                // Fallback: If displayName isn't on the Auth object (e.g., Email/Password signup)
-                // you would fetch it from your 'user_profiles' node here.
-                // For this example, let's use a temporary fallback.
-                // console.warn("Display name not directly on Auth user. Fetching from user_profiles or using fallback.");
-                // You'd need an async function like: currentUserName = await getUserDisplayNameFromDb(currentUserUid);
-                currentUserName = "Player " + currentUserUid.substring(0, 4); // Example fallback
-            }
-
-            // 4. Authentication Passed: Hide loading, show page content
-            if (pageContent) pageContent.style.display = 'flex'; // Show your page content (e.g., maze)
-
-            loadLeaderboard(todaysDate); // Assuming you'd get the date from config or elsewhere
-            initializeGame();
-        } else {
-            // User is not signed in OR is signed in anonymously - Redirect!
-            console.warn("User not authenticated for Daily Maze (or is anonymous). Redirecting to login page...");
-            // 4. Authentication Failed: Redirect (content remains hidden)
-            window.location.href = "/pages/login.html"; // Adjust to your actual login page path
-        }
-    }
-    catch (error) {
-        // Catch any errors during authentication or page setup
-        console.error("An error occurred during daily maze page initialization:", error);
-        // Handle gracefully, e.g., redirect to login or an error page
-        window.location.href = "/pages/login.html";
-    }
-}
-
 // Call the initialization function when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', checkAuthentication);
+// document.addEventListener('DOMContentLoaded', initializeGame);
+
+let gameButton = document.getElementById("beginGameButton")
+gameButton.addEventListener('click', function() {
+    // Deactivate button
+    gameButton.disabled = true;
+
+    // Start the game
+    initializeGame();
+});
 
 
-async function initializeGame() {
+function initializeGame() {
     try {
-        // Verify that the user is logged in
-        // auth.onAuthStateChanged(user => {
-        //     if (user) {
-        //         console.log("Auth state changed in another script: User is signed in!", user.uid);
-        //     } else {
-        //         console.log("Auth state changed in another script: User is signed out.");
-        //     }
-        // });
-
-        // Await the result of the asynchronous function
-        // The code here will pause until getDailyMazeConfig completes
-        const today = new Date();
-        console.log(today.toLocaleDateString()); // Format: MM/DD/YYYY
-        document.title = `Daily Maze – ${today.toLocaleDateString()}`;
+        // const today = new Date();
+        // console.log(today.toLocaleDateString()); // Format: MM/DD/YYYY
+        // document.title = `Daily Maze – ${today.toLocaleDateString()}`;
 
         // === REQUIRED CONFIG OPTIONS: ===
         // mazeAlgorithm = "prim";      // The type of maze generation algorithm to use: "prim"
@@ -104,13 +35,29 @@ async function initializeGame() {
         // wallColor = "black";         // The color of the walls of the maze
         // floorColor = "beige";        // The color of the passages within the maze
         // playerColor = "navy";        // The color of the player
-        let mazeConfig = await getDailyMazeConfig(todaysDate);
+        // let mazeConfig = await getDailyMazeConfig(todaysDate);
+        let mazeConfig = {
+            seed: Math.random()*2**32>>>0,
+            // seed: 2,
+            width: 12, // 4x + 3
+            height: 11, // 4x + 3
+            mazeAlgorithm: "prim",
+            playZoom: false,
+            zoomStartScale: 0.1,
+            zoomEndScale: 1,
+            startPosition: "center",
+            canvasColor: "white",
+            finishCellColor: "green",
+            wallColor: "black",
+            floorColor: "beige",
+            playerColor: "navy"
+        };
 
         if (mazeConfig) {
             // console.log("Today's Maze Config:", mazeConfig);
             // Now you can use mazeConfig.seed, mazeConfig.width, mazeConfig.height
             // directly here or pass them to other functions
-            generateMaze(todaysDate, mazeConfig.seed, mazeConfig.width, mazeConfig.height, mazeConfig.mazeAlgorithm, mazeConfig.playZoom, mazeConfig.zoomStartScale, mazeConfig.zoomEndScale, mazeConfig.startPosition, mazeConfig.canvasColor, mazeConfig.finishCellColor, mazeConfig.wallColor, mazeConfig.floorColor, mazeConfig.playerColor);
+            generateMaze(mazeConfig.seed, mazeConfig.width, mazeConfig.height, mazeConfig.mazeAlgorithm, mazeConfig.playZoom, mazeConfig.zoomStartScale, mazeConfig.zoomEndScale, mazeConfig.startPosition, mazeConfig.canvasColor, mazeConfig.finishCellColor, mazeConfig.wallColor, mazeConfig.floorColor, mazeConfig.playerColor);
         } else {
             console.warn("No maze config found for today. Cannot start game.");
             // Handle the case where no maze config is available
@@ -120,118 +67,12 @@ async function initializeGame() {
     } catch (error) {
         // Catch any errors that might occur during the async operation
         console.error("An error occurred during game initialization:", error);
-        displayErrorMessage("An error occurred. Check console for details.");
         return;
     }
-
-    // All code here will only execute AFTER the mazeConfig has been successfully fetched
-    // (or if an error occurred and was handled).
-    // This is where the rest of your game's setup logic would go.
-    // console.log("Maze generated. Proceeding with game setup...");
-    // setupInputListeners();
-    // startGameLoop();
-    // ... all other game initialization steps
 }
 
 
-// Creates the HTML element for a leaderboard entry given the number, name, and time of that entry
-function makeLeaderboardEntry(number, name, time_ms, isCurrentPlayer) {
-    let entry = document.createElement("li");
-    entry.classList.add("leaderboardEntry");
-    if (isCurrentPlayer) {
-        entry.classList.add("currentPlayerEntry");
-    }
-
-    let entryNumber = document.createElement("div");
-    entryNumber.classList.add("entryNumber");
-    entryNumber.innerText = number + '.';
-
-    let nameTimeContainer = document.createElement("div");
-    nameTimeContainer.classList.add("nameTimeContainer");
-
-    let entryName = document.createElement("div");
-    entryName.classList.add("entryName");
-    entryName.innerText = name;
-
-    let timeDiv = document.createElement("div");
-    let seconds = Math.floor(time_ms / 1000);
-    let ms = Math.floor(time_ms - seconds*1000);
-    let minutes = Math.floor(seconds / 60);
-    let hours = Math.floor(minutes / 60);
-    timeDiv.innerText = `(${hours}:${minutes}:${seconds}:${ms})`;
-
-    nameTimeContainer.appendChild(entryName);
-    nameTimeContainer.appendChild(timeDiv);
-    entry.appendChild(entryNumber);
-    entry.appendChild(nameTimeContainer);
-    
-    return entry;
-}
-
-function loadLeaderboard(dateString) {
-    // console.log(`Loading leaderboard for ${dateString}...`);
-    // Your actual leaderboard loading code (e.g., calling listenForLeaderboard)
-    // Example usage
-    const today = "2025-9-10";
-    document.getElementById("leaderboardTitle").innerText = `Leaderboard --- ${today}`;
-
-    let leaderboardElement = document.getElementById("leaderboardEntryList");
-    // console.log(`Listening for top 5 scores on ${today}...`);
-    const unsubscribeLeaderboard = listenForLeaderboard(today, 5, (leaderboard) => {
-        // console.log(`--- Leaderboard for ${today} (Top 5) ---`);
-        leaderboardElement.innerHTML = "";
-        if (leaderboard.length === 0) {
-                leaderboardElement.appendChild(makeLeaderboardEntry('---', '---', 0));
-        } else {
-            leaderboard.forEach((entry, index) => {
-                // console.log(`${index + 1}. ${entry.name} (${entry.time_ms / 1000}s)`);
-                // console.log(`Current: ${currentUserUid}\nEntry: ${entry.playerId}`);
-                leaderboardElement.appendChild(makeLeaderboardEntry(index + 1, entry.name, entry.time_ms, entry.playerId === getCurrentUserUid()));
-            });
-        }
-        // console.log("---------------------------------------");
-    });
-
-    // To stop listening later (e.g., when the user leaves the page):
-    // unsubscribeLeaderboard();
-}
-
-function displayErrorMessage(message) {
-    console.log(`Displaying error message: ${message}`);
-    // Your UI code to show an error
-}
-
-// function setupInputListeners() { console.log("Setting up input listeners."); }
-
-// function startGameLoop() { console.log("Starting game loop."); }
-
-// Don't forget to actually call your async initialization function to start your game!
-// initializeGame();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function generateMaze(todaysDate, gameSeed, mazeWidth, mazeHeight, mazeAlgorithm, gameStartZoom, animationStartScale, animationEndScale, startPosition, canvasColor, finishCellColor, wallColor, floorColor, playerColor) {
+function generateMaze(gameSeed, mazeWidth, mazeHeight, mazeAlgorithm, gameStartZoom, animationStartScale, animationEndScale, startPosition, canvasColor, finishCellColor, wallColor, floorColor, playerColor) {
 
 // let gameStartZoom = true; // determines whether to play the zoom animation at that start
 // let animationStartScale = 0.5; // The scale level to define the start of the animation (how zoomed out it is)
@@ -262,14 +103,6 @@ window.onbeforeunload = function(event) {
 };
 
 // window.addEventListener("load", generateGame);
-let gameButton = document.getElementById("beginGameButton")
-gameButton.addEventListener('click', function() {
-    // Deactivate button
-    gameButton.disabled = true;
-
-    // Start the game
-    generateGame();
-});
 
 // Stop/start timer when game has lost or gained focus
 let game = document.getElementById("gameCanvas");
@@ -288,6 +121,8 @@ game.addEventListener("blur", function() { // 'blur' == losing focus
 game.addEventListener("focus", function() { // 'blur' == losing focus
     startTimer();
 });
+
+generateGame();
 
 function updateTimeDisplay() {
     // let timeString = ellapsedTime.toTimeString();
@@ -331,38 +166,7 @@ function stopTimer() {
 }
 
 // Runs all game logic when the page loads
-async function generateGame() {
-    // Safely get the current user details using your getter functions
-    const currentUserUid = getCurrentUserUid(); // This gets the UID string
-    const currentFirebaseUser = getCurrentUser(); // This gets the full User object
-
-    // --- IMPORTANT: Get the playerName (string) correctly ---
-    let playerName = "Unknown Player"; // Default fallback
-
-    // Option 1: Try to get display name directly from the Firebase Auth User object
-    if (currentFirebaseUser && currentFirebaseUser.displayName) {
-        playerName = currentFirebaseUser.displayName;
-    } else {
-        // Option 2: If displayName is null (common for Email/Password),
-        // fetch it from your Realtime Database 'user_profiles' node.
-        // This requires an asynchronous call, so use 'await'.
-        try {
-            // You'll need a function to fetch the display name from your DB
-            // Let's assume you have (or will create) a function like this:
-            // async function getUserDisplayNameFromDb(uid) { /* ... fetch from user_profiles/${uid}/displayName ... */ }
-            const userProfileRef = ref(database, `user_profiles/${currentUserUid}/displayName`); // Assuming 'database' is imported/available
-            const snapshot = await get(userProfileRef);
-            if (snapshot.exists()) {
-                playerName = snapshot.val();
-            } else {
-                console.warn(`Display name not found in DB for UID: ${currentUserUid}`);
-            }
-        } catch (dbError) {
-            console.error("Error fetching display name from DB:", dbError);
-        }
-    }
-    // --- End of playerName retrieval ---
-
+function generateGame() {
     let gameCanvas = document.getElementById("gameCanvas");
     let canvasWidth = gameCanvas.width;
     let canvasHeight = gameCanvas.height;
@@ -632,10 +436,6 @@ async function generateGame() {
         stopTimer();
         gameFinished = true;
         let deltaTime = Date.now() - startTime - timePaused;
-
-        // Submit the player score
-        // const generateTestPlayerId = () => `player_${Math.random().toString(36).substring(2, 11)}`;
-        submitPlayerScore(todaysDate, currentUserUid, playerName, deltaTime);
 
         let solveTime = new Date();
         solveTime.setTime(deltaTime);

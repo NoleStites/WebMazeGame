@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Maze Game Home</title>
+        <title>Maze Generator</title>
         <link rel="icon" type="image/x-icon" href="/assets/favicon.png">
-        <link href="./stylesheets/index.css" rel="stylesheet">
-        <!-- <script src="./scripts/game.js" type="module" defer></script> -->
+        <link href="/stylesheets/styles.css" rel="stylesheet">
+
+        <!-- Game script -->
+        <script src="/scripts/free-play.js" type="module" defer></script>
 
         <!-- Clock files -->
-        <!-- <script src="./scripts/clock.js" type="module" defer></script> -->
-        <!-- <link href="./stylesheets/clock.css" rel="stylesheet"> -->
-
-        <!-- The core Firebase JS SDK is always required and must be listed first -->
-        <!-- <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script> -->
-
-        <!-- Add the Firebase products that you want to use -->
-        <!-- For Realtime Database, you'll need firebase-database-compat.js -->
-        <!-- <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script> -->
-
-        <!-- <script src="./scripts/firebase.js" type="module" defer></script> -->
+        <script src="/scripts/clock.js" type="module" defer></script>
+        <link href="/stylesheets/clock.css" rel="stylesheet">
     </head>
     <body>
         <section id="page">
-            <h1>Home</h1>
-            <h2><a href="./pages/daily.html">Daily Maze</a></h2>
-            <h2><a href="./pages/login.html">Login</a></h2>
-            <h2><a href="./pages/delete-account.html">Delete Account</a></h2>
+            <div id="gameContainer">
+                <div id="clock_box"></div>
+                <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
+                <button id="beginGameButton">BEGIN</button>
+            </div>
+            <form>
+                <label for="seed">Seed</label>
+                <input type="number" id="seed" name="seed"><br>
+                <label for="width">Width</label>
+                <input type="number" id="width" name="width" min="3" max="103" step="4"><br>
+                <label for="height">Height</label>
+                <input type="number" id="height" name="height" min="3" max="103" step="4"><br>
+            </form>
         </section>
     </body>
 </html>
