@@ -14,19 +14,42 @@
     </head>
     <body>
         <section id="page">
-            <div id="gameContainer">
-                <div id="clock_box"></div>
-                <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
-                <button id="beginGameButton">BEGIN</button>
+            <div id="titleContainer" class="curveBorder game_label">
+                <p>Maze Generator</p>
             </div>
-            <form>
-                <label for="seed">Seed</label>
-                <input type="number" id="seed" name="seed"><br>
-                <label for="width">Width</label>
-                <input type="number" id="width" name="width" min="3" max="103" step="4"><br>
-                <label for="height">Height</label>
-                <input type="number" id="height" name="height" min="3" max="103" step="4"><br>
-            </form>
+            <div id="inputContainer" class="insetShadow curveBorder">
+                <div id="seedInputs">
+                    <label for="seed" class="game_label">Seed:</label>
+                    <input type="number" id="seed" name="seed" class="game_label">
+                    <button id="randomizeSeedButton" class="game_label">Randomize</button>
+                </div>
+                <div id="widthHeightInputs">
+                    <div>
+                        <label for="width" class="game_label">Width:</label>
+                        <input type="number" id="width" name="width" class="game_label" min="7" max="103" step="2" value="15">
+                    </div>
+                    <div>
+                        <label for="height" class="game_label">Height:</label>
+                        <input type="number" id="height" name="height" class="game_label" min="7" max="103" step="2" value="15">                        
+                    </div>
+                    <button id="beginGameButton" class="game_label">BEGIN</button>
+                </div>   
+            </div>
+            <div id="canvasPadding" class="insetShadow curveBorder">
+                <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
+            </div>
+            <section id="clock_container" class="insetShadow curveBorder">
+                <div id="clock_box">
+                    <div id="hr_clock" class="clock_section"></div>
+                    <div class="game_label">h</div>
+                    <div id="min_clock" class="clock_section"></div>
+                    <div class="game_label">m</div>
+                    <div id="sec_clock" class="clock_section"></div>
+                    <div class="game_label">s</div>
+                    <div id="ms_clock" class="clock_section"></div>                        
+                    <div class="game_label">ms</div>
+                </div>
+            </section>
         </section>
     </body>
 </html>

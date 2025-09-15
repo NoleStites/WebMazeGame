@@ -51,7 +51,7 @@ export function adjustTime(hour, minute, second, millisecond) {
     changeDigit("second_one", second[1]);
     changeDigit("millisecond_hundred", millisecond[0]);
     changeDigit("millisecond_ten", millisecond[1]);
-    // changeDigit("millisecond_one", millisecond[2]);
+    changeDigit("millisecond_one", millisecond[2]);
 }
 
 // Change CSS variables to reflect either "dark" or "light" mode
@@ -102,21 +102,25 @@ function createDecimalCharacter() {
 }
 
 // Get the clock to populate with digits
-let clock_box = document.getElementById("clock_box");
+// let clock_box = document.getElementById("clock_box");
+let clock_hr_box = document.getElementById("hr_clock");
+let clock_min_box = document.getElementById("min_clock");
+let clock_sec_box = document.getElementById("sec_clock");
+let clock_ms_box = document.getElementById("ms_clock");
 
 // Create the digit columns
-clock_box.appendChild(makeDigitColumn("hour_ten"));
-clock_box.appendChild(makeDigitColumn("hour_one"));
-clock_box.appendChild(createColonCharacter());
-clock_box.appendChild(makeDigitColumn("minute_ten"));
-clock_box.appendChild(makeDigitColumn("minute_one"));
-clock_box.appendChild(createColonCharacter());
-clock_box.appendChild(makeDigitColumn("second_ten"));
-clock_box.appendChild(makeDigitColumn("second_one"));
-clock_box.appendChild(createColonCharacter());
-clock_box.appendChild(makeDigitColumn("millisecond_hundred"));
-clock_box.appendChild(makeDigitColumn("millisecond_ten"));
-// clock_box.appendChild(makeDigitColumn("millisecond_one"));
+clock_hr_box.appendChild(makeDigitColumn("hour_ten"));
+clock_hr_box.appendChild(makeDigitColumn("hour_one"));
+// clock_box.appendChild(createColonCharacter());
+clock_min_box.appendChild(makeDigitColumn("minute_ten"));
+clock_min_box.appendChild(makeDigitColumn("minute_one"));
+// clock_box.appendChild(createColonCharacter());
+clock_sec_box.appendChild(makeDigitColumn("second_ten"));
+clock_sec_box.appendChild(makeDigitColumn("second_one"));
+// clock_box.appendChild(createColonCharacter());
+clock_ms_box.appendChild(makeDigitColumn("millisecond_hundred"));
+clock_ms_box.appendChild(makeDigitColumn("millisecond_ten"));
+clock_ms_box.appendChild(makeDigitColumn("millisecond_one"));
 
 // Update the displayed time every second
 // setInterval(function() {

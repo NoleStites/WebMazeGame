@@ -63,3 +63,14 @@ body {
     line-height: var(--digit-font-size);
     text-align: center;
 }
+
+.clock_section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    padding: 5px;
+    /* border: 8px solid rgb(44, 27, 11); */
+    overflow: hidden;
+    /* background-color: rgba(0, 0, 0, 0.267); */
+}

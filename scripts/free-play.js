@@ -1,23 +1,63 @@
 import { generatePrimMaze } from './prim.js';
 import { adjustTime } from './clock.js';
 
-let pageContent = document.getElementById("page");
-let todaysDate = "2025-9-10";
-
 // Call the initialization function when the DOM is fully loaded
 // document.addEventListener('DOMContentLoaded', initializeGame);
 
-let gameButton = document.getElementById("beginGameButton")
-gameButton.addEventListener('click', function() {
-    // Deactivate button
-    gameButton.disabled = true;
+document.getElementById("randomizeSeedButton").addEventListener("click", function() {
+    let newSeed = Math.random()*2**32>>>0;
+    document.getElementById("seed").value = newSeed;
 
-    // Start the game
-    initializeGame();
+    let seed = Number(document.getElementById("seed").value);
+    let width = Number(document.getElementById("width").value);
+    let height = Number(document.getElementById("height").value);
+
+    if (validateInput(false)) { // Automatically generate new maze
+        initializeGame(seed, width, height);
+    }
 });
 
+let gameButton = document.getElementById("beginGameButton")
+gameButton.addEventListener('click', function() {
+    if (!validateInput()) {
+        return;
+    }
 
-function initializeGame() {
+    let width = Number(document.getElementById("width").value);
+    let height = Number(document.getElementById("height").value);
+    let seed = Number(document.getElementById("seed").value);
+    
+    // Deactivate button
+    // gameButton.disabled = true;
+
+    // Start the game
+    initializeGame(seed, width, height);
+});
+
+// returns true if the user input is valid
+// showError: bool to determine whether to announce error or not
+function validateInput(showError=true) {
+    let width = Number(document.getElementById("width").value);
+    let height = Number(document.getElementById("height").value);
+
+    // Enforce proper width and height values
+    if (width % 2 == 0 || height % 2 == 0) {
+        if (showError) {
+            window.alert("Width and Height values must be odd.");
+        }
+        return false;
+    }
+    if (width < 7 || height < 7) {
+        if (showError) {
+            window.alert("Width and Height must be at least 7.");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+function initializeGame(seed, width, height) {
     try {
         // const today = new Date();
         // console.log(today.toLocaleDateString()); // Format: MM/DD/YYYY
@@ -37,16 +77,16 @@ function initializeGame() {
         // playerColor = "navy";        // The color of the player
         // let mazeConfig = await getDailyMazeConfig(todaysDate);
         let mazeConfig = {
-            seed: Math.random()*2**32>>>0,
-            // seed: 2,
-            width: 12, // 4x + 3
-            height: 11, // 4x + 3
+            // seed: Math.random()*2**32>>>0,
+            seed: seed,
+            width: width, // 4x + 3
+            height: height, // 4x + 3
             mazeAlgorithm: "prim",
-            playZoom: false,
+            playZoom: true,
             zoomStartScale: 0.1,
-            zoomEndScale: 1,
+            zoomEndScale: 0.5,
             startPosition: "center",
-            canvasColor: "white",
+            canvasColor: "black",
             finishCellColor: "green",
             wallColor: "black",
             floorColor: "beige",
@@ -185,6 +225,7 @@ function generateGame() {
     }
     if (gameCanvas.getContext) {
         ctx = gameCanvas.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset the scale before changing it (or else it scales the scale)
         ctx.scale(scale, scale); // Increase the size of each unit in the canvas (zooming in)
     }
     else {
