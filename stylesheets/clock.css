@@ -73,3 +73,20 @@ body {
     overflow: hidden;
     /* background-color: rgba(0, 0, 0, 0.267); */
 }
+
+
+
+/* Mobile (portrait phones ≤ 480px) */
+@media (max-width: 480px) {
+    :root {
+        --digit-font-size: 35px;
+        --space_between_digits: 2px;
+    }
+}
+
+/* Small tablets (481px – 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    :root {
+        --digit-font-size: 45px;
+    }
+}

@@ -76,24 +76,93 @@ document.addEventListener("keypress", function(e) {
     // Check direction of movement based on the key pressed
     switch (e.key) {
         case 'w':
+        case 'W':
+        case 'ArrowUp':
             movePlayer(0, playerSpeed);
             drawGame();
             break;
         case 'a':
+        case 'A':
+        case 'ArrowLeft':
             movePlayer(playerSpeed, 0);
             drawGame();
             break;
         case 's':
+        case 'S':
+        case 'ArrowDown':
             movePlayer(0, -playerSpeed);
             drawGame();
             break;
         case 'd':
+        case 'D':
+        case 'ArrowRight':
             movePlayer(-playerSpeed, 0);
             drawGame();
             break;
 
     }
 });
+
+// Mobile-friendly input detection (vertical and horizontal swipes)
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener("touchstart", (event) => {
+    // Do nothing if the game is not in focus
+    if (document.activeElement !== game) {
+        return;
+    }
+
+    // Do nothing if the game hasnt started or is finished
+    if (!gameStarted || gameFinished) {
+        return;
+    }
+
+    const touch = event.changedTouches[0];
+    touchStartX = touch.screenX;
+    touchStartY = touch.screenY;
+}, false);
+
+document.addEventListener("touchend", (event) => {
+    // Do nothing if the game is not in focus
+    if (document.activeElement !== game) {
+        return;
+    }
+
+    // Do nothing if the game hasnt started or is finished
+    if (!gameStarted || gameFinished) {
+        return;
+    }
+    
+    const touch = event.changedTouches[0];
+    const dx = touch.screenX - touchStartX;
+    const dy = touch.screenY - touchStartY;
+
+    // Determine if swipe is horizontal or vertical
+    if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal swipe
+        if (dx > 30) {
+            // console.log("Swipe right"); // → move right
+            movePlayer(-playerSpeed, 0);
+            drawGame();
+        } else if (dx < -30) {
+            // console.log("Swipe left");  // → move left
+            movePlayer(playerSpeed, 0);
+            drawGame();
+        }
+    } else {
+        // Vertical swipe
+        if (dy > 30) {
+            // console.log("Swipe down");  // ↓ move down
+            movePlayer(0, -playerSpeed);
+            drawGame();
+        } else if (dy < -30) {
+            // console.log("Swipe up");    // ↑ move up
+            movePlayer(0, playerSpeed);
+            drawGame();
+        }
+    }
+}, false);
 
 // returns true if the user input is valid
 // showError: bool to determine whether to announce error or not

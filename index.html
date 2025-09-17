@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
         <title>Maze Generator</title>
         <link rel="icon" type="image/x-icon" href="/assets/favicon.png">
         <link href="/stylesheets/styles.css" rel="stylesheet">
@@ -14,13 +17,15 @@
     </head>
     <body>
         <section id="page">
-            <div id="titleContainer" class="curveBorder game_label">
-                <p>Maze Generator</p>
+            <div id="titleContainer" class="curveBorder insetShadow game_label">
+                <p>Maze Rush</p>
             </div>
             <div id="inputContainer" class="insetShadow curveBorder">
                 <div id="seedInputs">
-                    <label for="seed" class="game_label">Seed:</label>
-                    <input type="number" id="seed" name="seed" class="game_label" value="123456789">
+                    <div>
+                        <label for="seed" class="game_label">Seed:</label>
+                        <input type="number" id="seed" name="seed" class="game_label" value="123456789">
+                    </div>
                     <button id="randomizeSeedButton" class="game_label">Randomize</button>
                 </div>
                 <div id="widthHeightInputs">
@@ -36,7 +41,7 @@
                 </div>   
             </div>
             <div id="canvasPadding" class="insetShadow curveBorder">
-                <canvas id="gameCanvas" tabindex="0" width="500" height="500"></canvas>
+                <canvas id="gameCanvas" tabindex="0" width="400" height="400"></canvas>
             </div>
             <section id="clock_container" class="insetShadow curveBorder">
                 <div id="clock_box">
