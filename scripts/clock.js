@@ -32,12 +32,19 @@ function addZero(i) {
     return i;
 }
 
+// Append zeroes until 3-digits long
+function padMilliseconds(i) {
+    if (i < 10) {i = "00" + i;}
+    else if (i < 100) {i = "0" + i;}
+    return i;
+}
+
 // Given the new hour, minute, and second, will adjust the displayed time
 export function adjustTime(hour, minute, second, millisecond) {
     hour = addZero(hour);
     minute = addZero(minute);
     second = addZero(second);
-    millisecond = `${millisecond}`;
+    millisecond = `${padMilliseconds(millisecond)}`;
 
     hour = String(hour);
     minute = String(minute);
