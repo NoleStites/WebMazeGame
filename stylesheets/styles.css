@@ -32,7 +32,7 @@ body {
     /* justify-content: center; */
     align-items: center;
     background-color: rgb(51, 42, 30);
-    background-image: url(/assets/wood.jpg);
+    background-image: url(../assets/wood.jpg);
     /* background-size: cover; */
     padding: 20px;
 }
@@ -111,7 +111,7 @@ input {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url(/assets/felt.png  );
+    background-image: url(../assets/felt.png  );
 }
 
 #gameCanvas {
