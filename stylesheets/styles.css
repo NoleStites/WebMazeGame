@@ -31,7 +31,7 @@ body {
     display: flex;
     /* justify-content: center; */
     align-items: center;
-    background-color: rgb(68, 53, 41);
+    background-color: rgb(51, 42, 30);
     background-image: url(/assets/wood.jpg);
     /* background-size: cover; */
     padding: 20px;
@@ -106,7 +106,7 @@ input {
 #canvasPadding {
     /* width: fit-content; */
     width: 100%;
-    background-color: rgb(13, 44, 1);
+    background-color: rgb(16, 53, 1);
     padding: 50px;
     display: flex;
     justify-content: center;
