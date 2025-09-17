@@ -33,7 +33,7 @@ var cellSize = 20;
 var playerSpeed = cellSize;
 var playerSize = Math.floor(cellSize*0.7);
 var scale;
-var ctx;
+var ctx = gameCanvas.getContext("2d");
 var canvasWidth;
 var canvasHeight;
 var playerX;
@@ -293,14 +293,14 @@ function initializeGame(seed, width, height) {
             width: width, // 4x + 3
             height: height, // 4x + 3
             mazeAlgorithm: "prim",
-            playZoom: true,
+            playZoom: false,
             zoomStartScale: 0.1,
-            zoomEndScale: 1.5,
+            zoomEndScale: 3,
             startPosition: "center",
             canvasColor: "black",
             finishCellColor: "green",
-            wallColor: "black",
-            floorColor: "beige",
+            wallColor: "rgb(0, 0, 0)",
+            floorColor: "rgb(206, 206, 206)",
             playerColor: "navy"
         };
 
@@ -365,7 +365,6 @@ function generateGame() {
         scale = mazeConfig.zoomEndScale;
     }
     if (gameCanvas.getContext) {
-        ctx = gameCanvas.getContext("2d");
         ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset the scale before changing it (or else it scales the scale)
         ctx.scale(scale, scale); // Increase the size of each unit in the canvas (zooming in)
     }
@@ -477,7 +476,7 @@ function generateGame() {
                 clearInterval(intervalId); // Stop the interval after 3 ticks
                 callback();
             }
-        }, 1000);
+        }, 500);
         currentGameIntervals.push(intervalId);
     }
 
