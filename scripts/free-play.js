@@ -362,8 +362,8 @@ function initializeGame(seed, width, height) {
             width: width, // 4x + 3
             height: height, // 4x + 3
             mazeAlgorithm: "prim",
-            playZoom: false,
-            zoomStartScale: 0.1,
+            playZoom: true,
+            zoomStartScale: 0.5,
             zoomEndScale: 3,
             startPosition: "center",
             canvasColor: "black",
