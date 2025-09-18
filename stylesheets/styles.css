@@ -114,6 +114,19 @@ input {
     background-image: url(../assets/felt.png  );
 }
 
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0px 0px rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.9);
+  }
+}
+
+.glowHint {
+    animation: glowPulse 1.5s infinite ease-in-out;
+}
+
 #gameCanvas {
     width: 100%;
     /* background-color: rgb(0, 0, 0); */

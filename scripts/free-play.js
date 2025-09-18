@@ -369,7 +369,7 @@ function initializeGame(seed, width, height) {
             mazeAlgorithm: "prim",
             playZoom: true,
             zoomStartScale: 0.5,
-            zoomEndScale: 3,
+            zoomEndScale: 2.5,
             startPosition: "center",
             canvasColor: "black",
             finishCellColor: "green",
@@ -397,6 +397,19 @@ function initializeGame(seed, width, height) {
     }
 }
 
+function blurCanvas() {
+    stopTimer();
+}
+
+var firstfocus = true; // Whether or not this is the user's first time focusing the game
+function focusCanvas() {
+    if (firstfocus) {
+        game.classList.remove("glowHint"); // Remove the helpful tip to tap canvas
+        firstfocus = false;
+    }
+
+    startTimer();
+}
 
 // function generateMaze(seed, width, height, mazeAlgorithm, playZoom, zoomStartScale, zoomEndScale, startPosition, canvasColor, finishCellColor, wallColor, floorColor, playerColor) {
 function generateMaze() {
@@ -415,10 +428,10 @@ ellapsedTime = null;
 pauseStart = null; // start of recent pause
 timePaused = 0; //  time spent paused
 
-game.removeEventListener("blur", stopTimer) // 'blur' == losing focus
-game.removeEventListener("focus", startTimer) 
-game.addEventListener("blur", stopTimer) // 'blur' == losing focus
-game.addEventListener("focus", startTimer) 
+game.removeEventListener("blur", blurCanvas) // 'blur' == losing focus
+game.removeEventListener("focus", focusCanvas) 
+game.addEventListener("blur", blurCanvas) // 'blur' == losing focus
+game.addEventListener("focus", focusCanvas) 
 
 generateGame();
 
