@@ -108,6 +108,11 @@ let touchStartX = 0;
 let touchStartY = 0;
 
 document.addEventListener("touchstart", (event) => {
+    // Allow taps outside the canvas to lose focus on canvas
+    if (event.target !== game) {
+        game.blur();
+    }
+
     // Do nothing if the game is not in focus
     if (document.activeElement !== game) {
         return;
