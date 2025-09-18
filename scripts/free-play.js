@@ -411,9 +411,9 @@ pauseStart = null; // start of recent pause
 timePaused = 0; //  time spent paused
 
 game.removeEventListener("blur", stopTimer) // 'blur' == losing focus
-game.removeEventListener("focus", startTimer) // 'blur' == losing focus
+game.removeEventListener("focus", startTimer) 
 game.addEventListener("blur", stopTimer) // 'blur' == losing focus
-game.addEventListener("focus", startTimer) // 'blur' == losing focus
+game.addEventListener("focus", startTimer) 
 
 generateGame();
 
