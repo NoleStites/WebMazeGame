@@ -77,11 +77,11 @@ input {
     padding: 5px;
 }
 
-#seedInputs {
+#seedInputs, #widthHeightInputs {
     margin-bottom: 20px;
 }
 
-#seedInputs, #widthHeightInputs {
+#seedInputs, #widthHeightInputs, #controlInputs {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;

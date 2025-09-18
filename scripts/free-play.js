@@ -44,6 +44,12 @@ var wallOffsetY;
 var drawFinishCell;
 var currentGameIntervals = [];
 
+var invertControls = false;
+
+document.getElementById("invertControls").addEventListener("change", function(e) {
+    invertControls = e.target.checked;
+});
+
 document.getElementById("randomizeSeedButton").addEventListener("click", function() {
     let newSeed = Math.random()*2**32>>>0;
     document.getElementById("seed").value = newSeed;
@@ -74,32 +80,61 @@ document.addEventListener("keypress", function(e) {
     }
 
     // Check direction of movement based on the key pressed
-    switch (e.key) {
-        case 'w':
-        case 'W':
-        case 'ArrowUp':
-            movePlayer(0, playerSpeed);
-            drawGame();
-            break;
-        case 'a':
-        case 'A':
-        case 'ArrowLeft':
-            movePlayer(playerSpeed, 0);
-            drawGame();
-            break;
-        case 's':
-        case 'S':
-        case 'ArrowDown':
-            movePlayer(0, -playerSpeed);
-            drawGame();
-            break;
-        case 'd':
-        case 'D':
-        case 'ArrowRight':
-            movePlayer(-playerSpeed, 0);
-            drawGame();
-            break;
-
+    if (!invertControls) {
+        switch (e.key) {
+            case 'w':
+            case 'W':
+            case 'ArrowUp':
+                movePlayer(0, playerSpeed);
+                drawGame();
+                break;
+            case 'a':
+            case 'A':
+            case 'ArrowLeft':
+                movePlayer(playerSpeed, 0);
+                drawGame();
+                break;
+            case 's':
+            case 'S':
+            case 'ArrowDown':
+                movePlayer(0, -playerSpeed);
+                drawGame();
+                break;
+            case 'd':
+            case 'D':
+            case 'ArrowRight':
+                movePlayer(-playerSpeed, 0);
+                drawGame();
+                break;
+        }
+    }
+    else {
+        switch (e.key) {
+            case 'w':
+            case 'W':
+            case 'ArrowUp':
+                movePlayer(0, -playerSpeed);
+                drawGame();
+                break;
+            case 'a':
+            case 'A':
+            case 'ArrowLeft':
+                movePlayer(-playerSpeed, 0);
+                drawGame();
+                break;
+            case 's':
+            case 'S':
+            case 'ArrowDown':
+                movePlayer(0, playerSpeed);
+                drawGame();
+                break;
+            case 'd':
+            case 'D':
+            case 'ArrowRight':
+                movePlayer(playerSpeed, 0);
+                drawGame();
+                break;
+        }
     }
 });
 
@@ -148,22 +183,38 @@ document.addEventListener("touchend", (event) => {
         // Horizontal swipe
         if (dx > 30) {
             // console.log("Swipe right"); // → move right
-            movePlayer(-playerSpeed, 0);
+            if (!invertControls) {
+                movePlayer(-playerSpeed, 0);
+            } else {
+                movePlayer(playerSpeed, 0);
+            }
             drawGame();
         } else if (dx < -30) {
             // console.log("Swipe left");  // → move left
-            movePlayer(playerSpeed, 0);
+            if (!invertControls) {
+                movePlayer(playerSpeed, 0);
+            } else {
+                movePlayer(-playerSpeed, 0);
+            }
             drawGame();
         }
     } else {
         // Vertical swipe
         if (dy > 30) {
             // console.log("Swipe down");  // ↓ move down
-            movePlayer(0, -playerSpeed);
+            if (!invertControls) {
+                movePlayer(0, -playerSpeed);
+            } else {
+                movePlayer(0, playerSpeed);
+            }
             drawGame();
         } else if (dy < -30) {
             // console.log("Swipe up");    // ↑ move up
-            movePlayer(0, playerSpeed);
+            if (!invertControls) {
+                movePlayer(0, playerSpeed);
+            } else {
+                movePlayer(0, -playerSpeed);
+            }
             drawGame();
         }
     }
