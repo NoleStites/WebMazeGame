@@ -2,6 +2,7 @@ import { generatePrimMaze } from './prim.js';
 import { adjustTime } from './clock.js';
 
 var game = document.getElementById("gameCanvas");
+var dpad = document.getElementById("dpad");
 
 // The game config options
 var mazeConfig = {
@@ -45,9 +46,34 @@ var drawFinishCell;
 var currentGameIntervals = [];
 
 var invertControls = false;
+var showDpad = false;
+const isTouch = 'ontouchstart' in window;
+
+document.getElementById("invertControls").checked = false;
+document.getElementById("toggleDpad").checked = false;
+
+// Prevent dpad clicks/touches from stealing focus
+dpad.addEventListener("mousedown", (e) => {
+  e.preventDefault(); // stop focus change
+  game.focus();     // ensure the game keeps focus
+});
+
+dpad.addEventListener("touchstart", (e) => {
+  e.preventDefault(); // same for touch
+  game.focus();
+}, { passive: false });
 
 document.getElementById("invertControls").addEventListener("change", function(e) {
     invertControls = e.target.checked;
+});
+
+document.getElementById("toggleDpad").addEventListener("change", function(e) {
+    showDpad = e.target.checked;
+    if (showDpad) {
+        document.getElementById("dpad").style.display = "block";
+    } else {
+        document.getElementById("dpad").style.display = "none";
+    }
 });
 
 document.getElementById("randomizeSeedButton").addEventListener("click", function() {
@@ -68,6 +94,47 @@ document.getElementById("beginGameButton").addEventListener('click', function() 
     initializeGame(seed, width, height);
 });
 
+// DPAD CONTROLS
+const directions = {
+  dpadUp: handleMovementUp,
+  dpadDown: handleMovementDown,
+  dpadLeft: handleMovementLeft,
+  dpadRight: handleMovementRight
+};
+
+Object.entries(directions).forEach(([id, handler]) => {
+  const el = document.getElementById(id);
+
+  if (isTouch) { // Add a touch listener for mobile users
+    el.addEventListener("touchend", (e) => {
+      e.preventDefault(); // stop synthetic click
+      // Do nothing if the game is not in focus
+        if (document.activeElement !== game) {
+            return;
+        }
+
+        // Do nothing if the game hasnt started or is finished
+        if (!gameStarted || gameFinished) {
+            return;
+        }
+      handler();
+    }, { passive: false });
+  } else { // Add a mouse listener for desktop users
+    el.addEventListener("click", function() {
+        // Do nothing if the game is not in focus
+        if (document.activeElement !== game) {
+            return;
+        }
+
+        // Do nothing if the game hasnt started or is finished
+        if (!gameStarted || gameFinished) {
+            return;
+        }
+        handler();
+    });
+  }
+});
+
 document.addEventListener("keypress", function(e) {
     // Do nothing if the game is not in focus
     if (document.activeElement !== game) {
@@ -80,61 +147,27 @@ document.addEventListener("keypress", function(e) {
     }
 
     // Check direction of movement based on the key pressed
-    if (!invertControls) {
-        switch (e.key) {
-            case 'w':
-            case 'W':
-            case 'ArrowUp':
-                movePlayer(0, playerSpeed);
-                drawGame();
-                break;
-            case 'a':
-            case 'A':
-            case 'ArrowLeft':
-                movePlayer(playerSpeed, 0);
-                drawGame();
-                break;
-            case 's':
-            case 'S':
-            case 'ArrowDown':
-                movePlayer(0, -playerSpeed);
-                drawGame();
-                break;
-            case 'd':
-            case 'D':
-            case 'ArrowRight':
-                movePlayer(-playerSpeed, 0);
-                drawGame();
-                break;
-        }
-    }
-    else {
-        switch (e.key) {
-            case 'w':
-            case 'W':
-            case 'ArrowUp':
-                movePlayer(0, -playerSpeed);
-                drawGame();
-                break;
-            case 'a':
-            case 'A':
-            case 'ArrowLeft':
-                movePlayer(-playerSpeed, 0);
-                drawGame();
-                break;
-            case 's':
-            case 'S':
-            case 'ArrowDown':
-                movePlayer(0, playerSpeed);
-                drawGame();
-                break;
-            case 'd':
-            case 'D':
-            case 'ArrowRight':
-                movePlayer(playerSpeed, 0);
-                drawGame();
-                break;
-        }
+    switch (e.key) {
+        case 'w':
+        case 'W':
+        case 'ArrowUp':
+            handleMovementUp();
+            break;
+        case 'a':
+        case 'A':
+        case 'ArrowLeft':
+            handleMovementLeft();
+            break;
+        case 's':
+        case 'S':
+        case 'ArrowDown':
+            handleMovementDown();
+            break;
+        case 'd':
+        case 'D':
+        case 'ArrowRight':
+            handleMovementRight();
+            break;
     }
 });
 
@@ -143,8 +176,8 @@ let touchStartX = 0;
 let touchStartY = 0;
 
 document.addEventListener("touchstart", (event) => {
-    // Allow taps outside the canvas to lose focus on canvas
-    if (event.target !== game) {
+    // Only blur the canvas if tapping outside the canvas AND dpad
+    if (event.target !== game && !dpad.contains(event.target)) {
         game.blur();
     }
 
@@ -183,42 +216,56 @@ document.addEventListener("touchend", (event) => {
         // Horizontal swipe
         if (dx > 30) {
             // console.log("Swipe right"); // → move right
-            if (!invertControls) {
-                movePlayer(-playerSpeed, 0);
-            } else {
-                movePlayer(playerSpeed, 0);
-            }
-            drawGame();
+            handleMovementRight();
         } else if (dx < -30) {
             // console.log("Swipe left");  // → move left
-            if (!invertControls) {
-                movePlayer(playerSpeed, 0);
-            } else {
-                movePlayer(-playerSpeed, 0);
-            }
-            drawGame();
+            handleMovementLeft();
         }
     } else {
         // Vertical swipe
         if (dy > 30) {
             // console.log("Swipe down");  // ↓ move down
-            if (!invertControls) {
-                movePlayer(0, -playerSpeed);
-            } else {
-                movePlayer(0, playerSpeed);
-            }
-            drawGame();
+            handleMovementDown();
         } else if (dy < -30) {
             // console.log("Swipe up");    // ↑ move up
-            if (!invertControls) {
-                movePlayer(0, playerSpeed);
-            } else {
-                movePlayer(0, -playerSpeed);
-            }
-            drawGame();
+            handleMovementUp();
         }
     }
 }, false);
+
+// Determine how to move the player based on inversion of controls
+function handleMovementLeft() {
+    if (invertControls) {
+        movePlayer(playerSpeed, 0);
+    } else {
+        movePlayer(-playerSpeed, 0);
+    }
+    drawGame();
+}
+function handleMovementRight() {
+    if (invertControls) {
+        movePlayer(-playerSpeed, 0);
+    } else {
+        movePlayer(playerSpeed, 0);
+    }
+    drawGame();
+}
+function handleMovementUp() {
+    if (invertControls) {
+        movePlayer(0, playerSpeed);
+    } else {
+        movePlayer(0, -playerSpeed);
+    }
+    drawGame();
+}
+function handleMovementDown() {
+    if (invertControls) {
+        movePlayer(0, -playerSpeed);
+    } else {
+        movePlayer(0, playerSpeed);
+    }
+    drawGame();
+}
 
 // returns true if the user input is valid
 // showError: bool to determine whether to announce error or not
@@ -393,6 +440,8 @@ function checkForVictory() {
     let ms = solveTime.getMilliseconds();
     adjustTime(h, m, s, ms); // Display the final time
 
+    document.getElementById("finishMessage").style.display = "block";
+
     // console.log(solveTime.toTimeString());
     // console.log(`Solve Time: ${h}:${m}:${s}:${ms}`);
 }   
@@ -434,6 +483,7 @@ function initializeGame(seed, width, height) {
             // Now you can use mazeConfig.seed, mazeConfig.width, mazeConfig.height
             // directly here or pass them to other functions
             // generateMaze(mazeConfig.seed, mazeConfig.width, mazeConfig.height, mazeConfig.mazeAlgorithm, mazeConfig.playZoom, mazeConfig.zoomStartScale, mazeConfig.zoomEndScale, mazeConfig.startPosition, mazeConfig.canvasColor, mazeConfig.finishCellColor, mazeConfig.wallColor, mazeConfig.floorColor, mazeConfig.playerColor);
+            document.getElementById("finishMessage").style.display = "none";
             generateMaze();
         } else {
             console.warn("No maze config found for today. Cannot start game.");

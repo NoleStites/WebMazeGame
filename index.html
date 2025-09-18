@@ -44,10 +44,21 @@
                         <label for="invertControls" class="game_label">Invert Controls:</label>
                         <input type="checkbox" id="invertControls", name="invertControls">
                     </div>
+                    <div>
+                        <label for="toggleDpad" class="game_label">Dpad:</label>
+                        <input type="checkbox" id="toggleDpad", name="invertControls">
+                    </div>
                 </div>   
             </div>
             <div id="canvasPadding" class="insetShadow curveBorder">
                 <canvas id="gameCanvas" class="glowHint" tabindex="0" width="400" height="400"></canvas>
+                <div id="finishMessage" class="game_label">Finished!</div>
+                <div id="dpad" class="curveBorder" tabindex="-1">
+                    <button id="dpadUp" class="dpadDirection" tabindex="-1"></button>
+                    <button id="dpadDown" class="dpadDirection" tabindex="-1"></button>
+                    <button id="dpadLeft" class="dpadDirection" tabindex="-1"></button>
+                    <button id="dpadRight" class="dpadDirection" tabindex="-1"></button>
+                </div>
             </div>
             <section id="clock_container" class="insetShadow curveBorder">
                 <div id="clock_box">
