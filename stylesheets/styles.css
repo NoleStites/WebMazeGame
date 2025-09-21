@@ -261,7 +261,7 @@ input[type="checkbox"]:checked::after {
         --dpadPadding: 5px;
     }
     #canvasPadding {
-        padding: 25px;
+        padding: 20px;
     }
 
     #inputContainer {
@@ -277,6 +277,9 @@ input[type="checkbox"]:checked::after {
     }
     #dpad {
         width: 180px;
+    }
+    #page {
+        gap: 10px;
     }
 }
 
