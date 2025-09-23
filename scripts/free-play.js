@@ -45,11 +45,18 @@ var wallOffsetY;
 var drawFinishCell;
 var currentGameIntervals = [];
 
-var invertControls = false;
-var showDpad = false;
 const isTouch = 'ontouchstart' in window;
+var invertControls;
+var showDpad = false;
 
-document.getElementById("invertControls").checked = false;
+// Invert controls if on mobile
+if (isTouch) {
+    invertControls = false;
+    document.getElementById("invertControls").checked = false;
+} else {
+    invertControls = true;
+    document.getElementById("invertControls").checked = true;
+}
 document.getElementById("toggleDpad").checked = false;
 
 // Prevent dpad clicks/touches from stealing focus
